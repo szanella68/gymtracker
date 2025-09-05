@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymTracker - Il mio Profilo</title>
+    <base href="/gymtracker/">
+    <link rel="stylesheet" href="shared/css/shared.css">
+    <link rel="stylesheet" href="utente/css/utente.css">
+</head>
+<body>
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-avatar" id="profileAvatar">
+                👤
+            </div>
+            <h1 id="profileName">Caricamento...</h1>
+            <p id="profileEmail"></p>
+            <button onclick="window.location.href='/gymtracker/utente/dashboard.html'" class="btn-secondary">
+                ← Torna alla Dashboard
+            </button>
+        </div>
+        
+        <div class="profile-tabs">
+            <button class="profile-tab active" onclick="showTab('personal')">Informazioni Personali</button>
+            <button class="profile-tab" onclick="showTab('fitness')">Obiettivi Fitness</button>
+            <button class="profile-tab" onclick="showTab('security')">Sicurezza</button>
+        </div>
+        
+        <!-- Personal Information Tab -->
+        <div id="personalTab" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Informazioni Personali</h3>
+                </div>
+                <form id="personalForm">
+                    <div class="form-group">
+                        <label for="fullName">Nome completo</label>
+                        <input type="text" id="fullName" name="full_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Telefono</label>
+                        <input type="tel" id="phone" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="dateOfBirth">Data di nascita</label>
+                        <input type="date" id="dateOfBirth" name="date_of_birth">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Genere</label>
+                        <select id="gender" name="gender">
+                            <option value="">Seleziona</option>
+                            <option value="male">Maschio</option>
+                            <option value="female">Femmina</option>
+                            <option value="other">Altro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="emergencyContact">Contatto di emergenza</label>
+                        <input type="text" id="emergencyContact" name="emergency_contact" placeholder="Nome e telefono">
+                    </div>
+                    <button type="submit" class="btn-primary">Salva Modifiche</button>
+                    <div id="personalError" class="auth-error"></div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Fitness Goals Tab -->
+        <div id="fitnessTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Obiettivi e Informazioni Fitness</h3>
+                </div>
+                <form id="fitnessForm">
+                    <div class="form-group">
+                        <label for="height">Altezza (cm)</label>
+                        <input type="number" id="height" name="height_cm" min="100" max="250">
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">Peso (kg)</label>
+                        <input type="number" id="weight" name="weight_kg" min="30" max="200" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="experienceLevel">Livello di esperienza</label>
+                        <select id="experienceLevel" name="experience_level">
+                            <option value="">Seleziona</option>
+                            <option value="beginner">Principiante</option>
+                            <option value="intermediate">Intermedio</option>
+                            <option value="advanced">Avanzato</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fitnessGoal">Obiettivo principale</label>
+                        <textarea id="fitnessGoal" name="fitness_goal" placeholder="Descrivere il tuo obiettivo fitness principale..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="medicalNotes">Note mediche</label>
+                        <textarea id="medicalNotes" name="medical_notes" placeholder="Eventuali condizioni mediche o limitazioni fisiche..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Salva Obiettivi</button>
+                    <div id="fitnessError" class="auth-error"></div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Security Tab -->
+        <div id="securityTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Sicurezza Account</h3>
+                </div>
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Password attuale</label>
+                        <input type="password" id="currentPassword" name="current_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Nuova password</label>
+                        <input type="password" id="newPassword" name="new_password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword">Conferma nuova password</label>
+                        <input type="password" id="confirmNewPassword" name="confirm_new_password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Cambia Password</button>
+                    <div id="passwordError" class="auth-error"></div>
+                </form>
+                
+                <hr style="margin: 30px 0;">
+                
+                <div class="card">
+                    <h4>Logout da tutti i dispositivi</h4>
+                    <p>Disconnetti il tuo account da tutti i dispositivi per maggiore sicurezza.</p>
+                    <button onclick="logoutAllDevices()" class="btn-secondary">Logout Completo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/core/utils.js"></script>
+    <script>
+        // Auth check
+        if (!GymAPI.isAuthenticated()) {
+            window.location.href = '/gymtracker/utente/';
+        }
+        
+        let currentUserData = null;
+        
+        // Load user profile data
+        async function loadProfile() {
+            try {
+                const userProfile = await GymAPI.getCurrentUser();
+                currentUserData = userProfile;
+                
+                // Update header
+                document.getElementById('profileName').textContent = userProfile.profile?.full_name || 'Utente';
+                document.getElementById('profileEmail').textContent = userProfile.email;
+                
+                // Update profile avatar with first letter of name
+                const firstLetter = (userProfile.profile?.full_name || 'U').charAt(0).toUpperCase();
+                document.getElementById('profileAvatar').textContent = firstLetter;
+                
+                // Fill personal information form
+                fillPersonalForm(userProfile);
+                fillFitnessForm(userProfile);
+                
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                if (error.status === 401) {
+                    GymAPI.removeToken();
+                    window.location.href = '/gymtracker/utente/';
+                }
+            }
+        }
+        
+        function fillPersonalForm(userProfile) {
+            const profile = userProfile.profile || {};
+            document.getElementById('fullName').value = profile.full_name || '';
+            document.getElementById('phone').value = profile.phone || '';
+            document.getElementById('dateOfBirth').value = profile.date_of_birth || '';
+            document.getElementById('gender').value = profile.gender || '';
+            document.getElementById('emergencyContact').value = profile.emergency_contact || '';
+        }
+        
+        function fillFitnessForm(userProfile) {
+            const profile = userProfile.profile || {};
+            document.getElementById('height').value = profile.height_cm || '';
+            document.getElementById('weight').value = profile.weight_kg || '';
+            document.getElementById('experienceLevel').value = profile.experience_level || '';
+            document.getElementById('fitnessGoal').value = profile.fitness_goal || '';
+            document.getElementById('medicalNotes').value = profile.medical_notes || '';
+        }
+        
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.profile-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Clear any error messages
+            document.querySelectorAll('.auth-error').forEach(error => {
+                error.textContent = '';
+            });
+        }
+        
+        // Handle personal information form
+        document.getElementById('personalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const errorDiv = document.getElementById('personalError');
+            
+            const formData = new FormData(e.target);
+            const updateData = {};
+            
+            // Only include changed fields
+            for (let [key, value] of formData.entries()) {
+                if (value.trim() !== '') {
+                    updateData[key] = value;
+                }
+            }
+            
+            errorDiv.textContent = '';
+            Utils.showLoading(submitBtn, 'Salvando...');
+            
+            try {
+                await GymAPI.updateProfile(updateData);
+                Utils.hideLoading(submitBtn);
+                Utils.showSuccess(errorDiv, 'Informazioni aggiornate con successo!');
+                
+                // Reload profile to get updated data
+                await loadProfile();
+                
+            } catch (error) {
+                Utils.hideLoading(submitBtn);
+                errorDiv.textContent = error.message || 'Errore nell\'aggiornamento del profilo';
+                console.error('Update profile error:', error);
+            }
+        });
+        
+        // Handle fitness goals form
+        document.getElementById('fitnessForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const errorDiv = document.getElementById('fitnessError');
+            
+            const formData = new FormData(e.target);
+            const updateData = {};
+            
+            // Include all fitness-related fields
+            for (let [key, value] of formData.entries()) {
+                if (value.trim() !== '') {
+                    updateData[key] = value;
+                }
+            }
+            
+            errorDiv.textContent = '';
+            Utils.showLoading(submitBtn, 'Salvando...');
+            
+            try {
+                await GymAPI.updateProfile(updateData);
+                Utils.hideLoading(submitBtn);
+                Utils.showSuccess(errorDiv, 'Obiettivi aggiornati con successo!');
+                
+            } catch (error) {
+                Utils.hideLoading(submitBtn);
+                errorDiv.textContent = error.message || 'Errore nell\'aggiornamento degli obiettivi';
+                console.error('Update fitness goals error:', error);
+            }
+        });
+        
+        // Handle password change form
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const errorDiv = document.getElementById('passwordError');
+            
+            const formData = new FormData(e.target);
+            const currentPassword = formData.get('current_password');
+            const newPassword = formData.get('new_password');
+            const confirmPassword = formData.get('confirm_new_password');
+            
+            errorDiv.textContent = '';
+            
+            // Client-side validation
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = 'Le nuove password non coincidono';
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                errorDiv.textContent = 'La nuova password deve essere di almeno 6 caratteri';
+                return;
+            }
+            
+            Utils.showLoading(submitBtn, 'Cambiando password...');
+            
+            try {
+                await GymAPI.changePassword(currentPassword, newPassword);
+                Utils.hideLoading(submitBtn);
+                Utils.showSuccess(errorDiv, 'Password cambiata con successo! Altri dispositivi sono stati disconnessi.');
+                
+                // Clear form
+                e.target.reset();
+                
+            } catch (error) {
+                Utils.hideLoading(submitBtn);
+                errorDiv.textContent = error.message || 'Errore nel cambio password';
+                console.error('Change password error:', error);
+            }
+        });
+        
+        // Logout from all devices
+        async function logoutAllDevices() {
+            const confirm = window.confirm('Vuoi davvero disconnettere il tuo account da tutti i dispositivi?');
+            if (!confirm) return;
+            
+            try {
+                await GymAPI.post('/auth/logout-all');
+                alert('Disconnesso da tutti i dispositivi. Verrai reindirizzato al login.');
+                GymAPI.removeToken();
+                window.location.href = '/gymtracker/utente/';
+            } catch (error) {
+                alert('Errore nella disconnessione: ' + (error.message || 'Riprova più tardi'));
+                console.error('Logout all devices error:', error);
+            }
+        }
+        
+        // Handle URL hash for direct tab access
+        function handleHash() {
+            const hash = window.location.hash.substring(1);
+            const validTabs = ['personal', 'fitness', 'security', 'goals'];
+            
+            if (validTabs.includes(hash)) {
+                const tabName = hash === 'goals' ? 'fitness' : hash;
+                showTab(tabName);
+            }
+        }
+        
+        // Initialize profile
+        loadProfile();
+        handleHash();
+        
+        // Handle hash changes
+        window.addEventListener('hashchange', handleHash);
+        
+        // Auto-save drafts (optional feature)
+        let autoSaveTimeout = null;
+        function scheduleAutoSave(formId) {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                const form = document.getElementById(formId);
+                const formData = new FormData(form);
+                const data = {};
+                for (let [key, value] of formData.entries()) {
+                    if (value.trim() !== '') {
+                        data[key] = value;
+                    }
+                }
+                Utils.setLocalStorage('gymtracker_profile_draft_' + formId, data);
+            }, 2000);
+        }
+        
+        // Add auto-save listeners
+        ['personalForm', 'fitnessForm'].forEach(formId => {
+            const form = document.getElementById(formId);
+            form.addEventListener('input', () => scheduleAutoSave(formId));
+        });
+    </script>
+</body>
+</html>

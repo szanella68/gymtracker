@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymTracker - Il mio Calendario</title>
+    <base href="/gymtracker/">
+    <link rel="stylesheet" href="shared/css/shared.css">
+    <link rel="stylesheet" href="utente/css/utente.css">
+</head>
+<body>
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <div class="nav-breadcrumb">
+                <a href="utente/dashboard.html" class="breadcrumb-link">🏠 Dashboard</a>
+                <span class="breadcrumb-separator">›</span>
+                <span class="breadcrumb-current">📅 Il mio Calendario</span>
+            </div>
+            
+            <div class="calendar-controls">
+                <button onclick="goToToday()" class="btn-secondary">Oggi</button>
+                <button onclick="logout()" class="btn-logout">Esci</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h1>📅 Il mio Calendario Allenamenti</h1>
+            </div>
+            
+            <div class="calendar-nav">
+                <button onclick="changeMonth(-1)" class="btn-secondary">‹ Precedente</button>
+                <h2 id="currentMonth" class="calendar-month">Caricamento...</h2>
+                <button onclick="changeMonth(1)" class="btn-secondary">Successivo ›</button>
+            </div>
+
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Calendar will be generated here -->
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>📋 Legenda</h3>
+            </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #667eea;"></span>
+                    <span>Allenamento programmato</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #28a745;"></span>
+                    <span>Completato</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #dc3545;"></span>
+                    <span>Saltato</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #ffc107;"></span>
+                    <span>In corso</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Details Modal -->
+        <div id="sessionModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal('sessionModal')">&times;</button>
+                <div id="sessionDetails">
+                    <!-- Session details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/core/utils.js"></script>
+    <script>
+        // Auth check
+        if (!GymAPI.isAuthenticated()) {
+            window.location.href = '/gymtracker/utente/';
+        }
+
+        let currentDate = new Date();
+        const monthNames = [
+            "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+            "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
+        ];
+        const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Update month header
+            document.getElementById('currentMonth').textContent = 
+                `${monthNames[month]} ${year}`;
+
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+
+            let calendarHTML = '';
+            
+            // Add day headers
+            dayNames.forEach(day => {
+                calendarHTML += `<div class="calendar-day-header">${day}</div>`;
+            });
+
+            // Add empty cells for days before the first day
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                calendarHTML += '<div class="calendar-day other-month"></div>';
+            }
+
+            // Add days of the month
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDate = new Date(year, month, day);
+                const isToday = dayDate.toDateString() === today.toDateString();
+                const hasWorkout = Math.random() > 0.7; // Mock workout data
+                
+                let dayClass = 'calendar-day';
+                if (isToday) dayClass += ' today';
+                if (hasWorkout) dayClass += ' has-workout';
+
+                calendarHTML += `
+                    <div class="${dayClass}" onclick="showDayDetails(${year}, ${month}, ${day})">
+                        <div class="day-number">${day}</div>
+                        ${hasWorkout ? '<div class="workout-indicator">Allenamento</div>' : ''}
+                    </div>
+                `;
+            }
+
+            document.getElementById('calendarGrid').innerHTML = calendarHTML;
+        }
+
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            renderCalendar();
+        }
+
+        function showDayDetails(year, month, day) {
+            const date = new Date(year, month, day);
+            const dateStr = date.toLocaleDateString('it-IT');
+            
+            // Mock session data - replace with actual API call
+            const mockSession = {
+                date: dateStr,
+                program: "Allenamento Full Body",
+                status: "scheduled",
+                exercises: [
+                    { name: "Squat", sets: 3, reps: "10-12" },
+                    { name: "Panca piana", sets: 3, reps: "8-10" },
+                    { name: "Trazioni", sets: 3, reps: "Max" }
+                ]
+            };
+
+            document.getElementById('sessionDetails').innerHTML = `
+                <h2>📅 ${dateStr}</h2>
+                <div class="session-info">
+                    <h3>${mockSession.program}</h3>
+                    <p><strong>Stato:</strong> <span class="session-status ${mockSession.status}">
+                        ${mockSession.status === 'scheduled' ? 'Programmato' : 
+                          mockSession.status === 'completed' ? 'Completato' : 'In corso'}
+                    </span></p>
+                    
+                    <h4>Esercizi previsti:</h4>
+                    <ul class="exercises-list">
+                        ${mockSession.exercises.map(ex => 
+                            `<li><strong>${ex.name}</strong> - ${ex.sets} serie x ${ex.reps} reps</li>`
+                        ).join('')}
+                    </ul>
+                    
+                    ${mockSession.status === 'scheduled' ? 
+                        '<button class="btn-primary w-full" onclick="startWorkout()">🏋️ Inizia Allenamento</button>' :
+                        '<button class="btn-secondary w-full" onclick="viewWorkoutDetails()">📊 Vedi Dettagli</button>'
+                    }
+                </div>
+            `;
+            
+            document.getElementById('sessionModal').classList.add('show');
+        }
+
+        function startWorkout() {
+            alert('Funzionalità in sviluppo: Sistema di logging allenamenti');
+            closeModal('sessionModal');
+        }
+
+        function viewWorkoutDetails() {
+            alert('Funzionalità in sviluppo: Dettagli allenamento completato');
+            closeModal('sessionModal');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        function logout() {
+            const confirmLogout = confirm('Sei sicuro di voler uscire?');
+            if (confirmLogout) {
+                GymAPI.logout();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                closeModal(e.target.id);
+            }
+        });
+
+        // Initialize calendar
+        renderCalendar();
+
+        // Add styles for new components
+        const style = document.createElement('style');
+        style.textContent = `
+            .nav-breadcrumb {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            
+            .breadcrumb-link {
+                color: #667eea;
+                text-decoration: none;
+                font-weight: 500;
+            }
+            
+            .breadcrumb-link:hover {
+                text-decoration: underline;
+            }
+            
+            .breadcrumb-separator {
+                color: #6c757d;
+                font-weight: bold;
+            }
+            
+            .breadcrumb-current {
+                color: #333;
+                font-weight: 600;
+            }
+            
+            .calendar-controls {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+            
+            .legend {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+            
+            .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .legend-color {
+                width: 16px;
+                height: 16px;
+                border-radius: 3px;
+            }
+            
+            .session-info .exercises-list {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 6px;
+                margin: 10px 0;
+            }
+            
+            .session-info .exercises-list li {
+                margin-bottom: 8px;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

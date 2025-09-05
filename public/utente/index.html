@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymTracker - Accesso</title>
+    <base href="/gymtracker/">
+    <link rel="stylesheet" href="shared/css/shared.css">
+    <link rel="stylesheet" href="utente/css/utente.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>🏋️ GymTracker</h1>
+                <p>Il tuo personal trainer digitale</p>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <h2>Accedi</h2>
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" name="email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" name="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary">Accedi</button>
+                <div class="auth-error" id="loginError"></div>
+                
+                <div class="auth-switch">
+                    <p>Non hai un account? 
+                        <a href="#" onclick="showRegisterForm()">Registrati qui</a>
+                    </p>
+                </div>
+            </form>
+            
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form">
+                <h2>Registrati come Cliente</h2>
+                <div class="form-group">
+                    <label for="registerName">Nome completo</label>
+                    <input type="text" id="registerName" name="name" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" name="email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" name="password" required minlength="6" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Conferma Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn-primary">Registrati</button>
+                <div class="auth-error" id="registerError"></div>
+                
+                <div class="auth-switch">
+                    <p>Hai già un account? 
+                        <a href="#" onclick="showLoginForm()">Accedi qui</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/core/utils.js"></script>
+    <script>
+        // Check se già autenticato
+        if (GymAPI.isAuthenticated()) {
+            redirectBasedOnRole();
+        }
+        
+        // Switch between login/register forms
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('registerForm').classList.remove('active');
+            clearErrors();
+        }
+        
+        function showRegisterForm() {
+            document.getElementById('registerForm').classList.add('active');
+            document.getElementById('loginForm').classList.remove('active');
+            clearErrors();
+        }
+        
+        function clearErrors() {
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('registerError').textContent = '';
+        }
+        
+        // Login handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const errorDiv = document.getElementById('loginError');
+            
+            const formData = new FormData(e.target);
+            const email = formData.get('email');
+            const password = formData.get('password');
+            
+            // Clear previous errors
+            errorDiv.textContent = '';
+            Utils.showLoading(submitBtn, 'Accesso...');
+            
+            try {
+                const response = await GymAPI.login(email, password);
+                
+                // Successful login
+                await redirectBasedOnRole();
+                
+            } catch (error) {
+                Utils.hideLoading(submitBtn);
+                
+                if (error instanceof APIError) {
+                    errorDiv.textContent = error.message;
+                } else {
+                    errorDiv.textContent = 'Errore di connessione. Riprova.';
+                }
+                
+                console.error('Login error:', error);
+            }
+        });
+        
+        // Register handler
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const errorDiv = document.getElementById('registerError');
+            
+            const formData = new FormData(e.target);
+            const name = formData.get('name');
+            const email = formData.get('email');
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+            
+            // Clear previous errors
+            errorDiv.textContent = '';
+            
+            // Client-side validation
+            if (!Utils.isValidEmail(email)) {
+                errorDiv.textContent = 'Formato email non valido';
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorDiv.textContent = 'La password deve essere di almeno 6 caratteri';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Le password non coincidono';
+                return;
+            }
+            
+            Utils.showLoading(submitBtn, 'Registrazione...');
+            
+            try {
+                const response = await GymAPI.register({
+                    email,
+                    password,
+                    full_name: name,
+                    user_type: 'standard' // Tutti i nuovi utenti sono clienti
+                });
+                
+                // Successful registration - redirect to client dashboard
+                window.location.href = '/gymtracker/utente/dashboard.html';
+                
+            } catch (error) {
+                Utils.hideLoading(submitBtn);
+                
+                if (error instanceof APIError) {
+                    errorDiv.textContent = error.message;
+                } else {
+                    errorDiv.textContent = 'Errore di connessione. Riprova.';
+                }
+                
+                console.error('Registration error:', error);
+            }
+        });
+        
+        // Redirect based on user role in database
+        async function redirectBasedOnRole() {
+            try {
+                const userProfile = await GymAPI.getCurrentUser();
+                const userType = userProfile.profile?.user_type || 'standard';
+                
+                if (userType === 'admin') {
+                    // Admin → Interfaccia Trainer
+                    window.location.href = '/gymtracker/trainer/dashboard.html';
+                } else {
+                    // Standard/tutti gli altri → Interfaccia Cliente
+                    window.location.href = '/gymtracker/utente/dashboard.html';
+                }
+            } catch (error) {
+                console.error('Error checking user role:', error);
+                
+                // Token non valido, rimuovi e resta sulla login
+                GymAPI.removeToken();
+                
+                // Se è un errore di autenticazione, non mostrare errore
+                // perché l'utente è già sulla pagina di login
+                if (error.status !== 401) {
+                    // In caso di altri errori, vai all'interfaccia cliente per default
+                    window.location.href = '/gymtracker/utente/dashboard.html';
+                }
+            }
+        }
+        
+        // Handle browser back button and URL changes
+        window.addEventListener('popstate', () => {
+            if (GymAPI.isAuthenticated()) {
+                redirectBasedOnRole();
+            }
+        });
+        
+        // Demo credentials hint (remove in production)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            setTimeout(() => {
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm.classList.contains('active')) {
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'info-message';
+                    infoDiv.innerHTML = '<strong>Demo:</strong> admin@gymtracker.local / admin123 (Admin)<br>Oppure registrati come nuovo cliente';
+                    loginForm.appendChild(infoDiv);
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymTracker - Dashboard Trainer</title>
+    <base href="/gymtracker/">
+    <link rel="stylesheet" href="shared/css/shared.css">
+    <link rel="stylesheet" href="trainer/css/trainer.css">
+</head>
+<body>
+    <main class="trainer-dashboard">
+        <div class="dashboard-header">
+            <h1>🧑‍🏫 Dashboard Trainer</h1>
+            <div class="trainer-actions">
+                <button onclick="showNewClientModal()" class="btn-primary">+ Nuovo Cliente</button>
+                <button onclick="logout()" class="btn-logout">Esci</button>
+            </div>
+        </div>
+        
+        <!-- Trainer Stats -->
+        <div class="trainer-stats stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <h3 id="totalClients">--</h3>
+                    <p>Clienti attivi</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-info">
+                    <h3 id="activePrograms">--</h3>
+                    <p>Programmi attivi</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-info">
+                    <h3 id="avgAdherence">--</h3>
+                    <p>Aderenza media</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="trainer-nav nav-menu">
+            <a href="trainer/clienti.html" class="nav-card primary">
+                <div class="nav-icon">👥</div>
+                <h3>Gestione Clienti</h3>
+                <p>Visualizza e gestisci i tuoi clienti</p>
+            </a>
+            
+            <a href="trainer/schede.html" class="nav-card">
+                <div class="nav-icon">📋</div>
+                <h3>Creazione Schede</h3>
+                <p>Crea e modifica programmi di allenamento</p>
+            </a>
+            
+            <a href="trainer/calendario.html" class="nav-card">
+                <div class="nav-icon">📅</div>
+                <h3>Pianificazione</h3>
+                <p>Assegna e programma allenamenti</p>
+            </a>
+            
+            <a href="trainer/report.html" class="nav-card">
+                <div class="nav-icon">📊</div>
+                <h3>Report & Analytics</h3>
+                <p>Analisi performance e progressi</p>
+            </a>
+        </div>
+        
+        <!-- Recent Activities -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📋 Attività Recenti</h3>
+            </div>
+            <div id="recentActivities">
+                <div class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <h3>Nessuna attività recente</h3>
+                    <p>Le attività recenti dei clienti appariranno qui.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Clients needing attention -->
+        <div class="attention-needed">
+            <h2>⚠️ Clienti che richiedono attenzione</h2>
+            <div id="attentionClients">
+                <!-- Popolato dinamicamente -->
+                <div class="empty-state">
+                    <div class="empty-icon">✅</div>
+                    <h3>Tutti i clienti sono in regola</h3>
+                    <p>Nessun cliente richiede attenzione al momento.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats Overview -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📊 Panoramica Rapida</h3>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card" style="background: #fff; border: 2px solid #e9ecef;">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-info">
+                        <h3 id="todaySessions" style="color: #333;">--</h3>
+                        <p>Sessioni oggi</p>
+                    </div>
+                </div>
+                <div class="stat-card" style="background: #fff; border: 2px solid #e9ecef;">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-info">
+                        <h3 id="weekStreak" style="color: #333;">--</h3>
+                        <p>Serie settimanale</p>
+                    </div>
+                </div>
+                <div class="stat-card" style="background: #fff; border: 2px solid #e9ecef;">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-info">
+                        <h3 id="monthlyGoals" style="color: #333;">--</h3>
+                        <p>Obiettivi raggiunti</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- New Client Modal -->
+    <div id="newClientModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('newClientModal')">&times;</button>
+            <h2>Nuovo Cliente</h2>
+            <form id="newClientForm">
+                <div class="form-group">
+                    <label for="clientName">Nome completo</label>
+                    <input type="text" id="clientName" name="full_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="clientEmail">Email</label>
+                    <input type="email" id="clientEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="clientPhone">Telefono</label>
+                    <input type="tel" id="clientPhone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="clientGoal">Obiettivo principale</label>
+                    <textarea id="clientGoal" name="fitness_goal" rows="3" placeholder="Descrivere l'obiettivo del cliente..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="experienceLevel">Livello esperienza</label>
+                    <select id="experienceLevel" name="experience_level">
+                        <option value="">Seleziona</option>
+                        <option value="beginner">Principiante</option>
+                        <option value="intermediate">Intermedio</option>
+                        <option value="advanced">Avanzato</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary w-full">Crea Cliente</button>
+                <div id="newClientError" class="error-message" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/core/utils.js"></script>
+    <script>
+        // Auth + role check
+        async function checkTrainerAccess() {
+            const token = GymAPI.getToken();
+            if (!token) {
+                window.location.href = '/gymtracker/utente/';
+                return;
+            }
+            
+            try {
+                const userProfile = await GymAPI.getCurrentUser();
+                if (userProfile.profile?.user_type !== 'admin') {
+                    alert('Accesso riservato agli amministratori');
+                    window.location.href = '/gymtracker/utente/dashboard.html';
+                    return;
+                }
+                
+                await loadTrainerDashboard();
+                
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                GymAPI.removeToken();
+                window.location.href = '/gymtracker/utente/';
+            }
+        }
+        
+        async function loadTrainerDashboard() {
+            try {
+                // Load basic stats
+                await Promise.all([
+                    loadTrainerStats(),
+                    loadRecentActivities(),
+                    loadAttentionClients(),
+                    loadQuickStats()
+                ]);
+                
+            } catch (error) {
+                console.error('Error loading trainer dashboard:', error);
+                showDashboardError('Errore nel caricamento dei dati del trainer.');
+            }
+        }
+        
+        async function loadTrainerStats() {
+            try {
+                // For now, use mock data - replace with real API calls when available
+                // const stats = await GymAPI.get('/trainer/stats');
+                
+                const mockStats = {
+                    totalClients: 24,
+                    activePrograms: 18,
+                    avgAdherence: 78
+                };
+                
+                document.getElementById('totalClients').textContent = mockStats.totalClients;
+                document.getElementById('activePrograms').textContent = mockStats.activePrograms;
+                document.getElementById('avgAdherence').textContent = mockStats.avgAdherence + '%';
+                
+            } catch (error) {
+                console.error('Error loading trainer stats:', error);
+                document.getElementById('totalClients').textContent = '0';
+                document.getElementById('activePrograms').textContent = '0';
+                document.getElementById('avgAdherence').textContent = '0%';
+            }
+        }
+        
+        async function loadRecentActivities() {
+            try {
+                // Mock recent activities - replace with real API
+                const activities = [
+                    {
+                        client: 'Mario Rossi',
+                        action: 'Completato allenamento',
+                        time: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
+                    },
+                    {
+                        client: 'Anna Bianchi',
+                        action: 'Saltato allenamento programmato',
+                        time: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5 hours ago
+                    }
+                ];
+                
+                const container = document.getElementById('recentActivities');
+                
+                if (activities.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📝</div>
+                            <h3>Nessuna attività recente</h3>
+                            <p>Le attività recenti dei clienti appariranno qui.</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = activities.map(activity => `
+                        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #e9ecef;">
+                            <div>
+                                <strong>${activity.client}</strong> - ${activity.action}
+                            </div>
+                            <small style="color: #6c757d;">${Utils.getRelativeTime(activity.time)}</small>
+                        </div>
+                    `).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading recent activities:', error);
+            }
+        }
+        
+        async function loadAttentionClients() {
+            try {
+                // Mock attention clients - replace with real API
+                const attentionClients = [
+                    // Example: clients with low adherence, missed sessions, etc.
+                ];
+                
+                const container = document.getElementById('attentionClients');
+                
+                if (attentionClients.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">✅</div>
+                            <h3>Tutti i clienti sono in regola</h3>
+                            <p>Nessun cliente richiede attenzione al momento.</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = attentionClients.map(client => `
+                        <div class="attention-client">
+                            <div class="attention-client-info">
+                                <h4>${client.name}</h4>
+                                <p>${client.reason}</p>
+                            </div>
+                            <span class="attention-badge">${client.priority}</span>
+                        </div>
+                    `).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading attention clients:', error);
+            }
+        }
+        
+        async function loadQuickStats() {
+            try {
+                // Mock quick stats - replace with real API
+                const quickStats = {
+                    todaySessions: 8,
+                    weekStreak: 5,
+                    monthlyGoals: 12
+                };
+                
+                document.getElementById('todaySessions').textContent = quickStats.todaySessions;
+                document.getElementById('weekStreak').textContent = quickStats.weekStreak;
+                document.getElementById('monthlyGoals').textContent = quickStats.monthlyGoals;
+                
+            } catch (error) {
+                console.error('Error loading quick stats:', error);
+                document.getElementById('todaySessions').textContent = '0';
+                document.getElementById('weekStreak').textContent = '0';
+                document.getElementById('monthlyGoals').textContent = '0';
+            }
+        }
+        
+        function showDashboardError(message) {
+            const dashboard = document.querySelector('.trainer-dashboard');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            dashboard.insertBefore(errorDiv, dashboard.firstChild);
+        }
+        
+        // Modal functions
+        function showNewClientModal() {
+            document.getElementById('newClientModal').classList.add('show');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+            
+            // Clear form if it exists
+            const form = document.querySelector(`#${modalId} form`);
+            if (form) {
+                form.reset();
+                const errorDiv = form.querySelector('.error-message');
+                if (errorDiv) errorDiv.style.display = 'none';
+            }
+        }
+        
+        // New client form handler
+        document.getElementById('newClientForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const errorDiv = document.getElementById('newClientError');
+            
+            const formData = new FormData(e.target);
+            const clientData = {
+                email: formData.get('email'),
+                password: Math.random().toString(36).substring(2, 10), // Generate random password
+                full_name: formData.get('full_name'),
+                user_type: 'standard'
+            };
+            
+            // Additional profile data
+            const profileData = {};
+            if (formData.get('phone')) profileData.phone = formData.get('phone');
+            if (formData.get('fitness_goal')) profileData.fitness_goal = formData.get('fitness_goal');
+            if (formData.get('experience_level')) profileData.experience_level = formData.get('experience_level');
+            
+            errorDiv.style.display = 'none';
+            Utils.showLoading(submitBtn, 'Creando cliente...');
+            
+            try {
+                // Create user account
+                const newUser = await GymAPI.post('/auth/register', clientData);
+                
+                // Update profile with additional data if provided
+                if (Object.keys(profileData).length > 0) {
+                    // Note: This would require admin API endpoints to update other users' profiles
+                    console.log('Additional profile data to update:', profileData);
+                }
+                
+                Utils.hideLoading(submitBtn);
+                alert(`Cliente creato con successo!\n\nCredenziali:\nEmail: ${clientData.email}\nPassword temporanea: ${clientData.password}\n\nIl cliente dovrebbe cambiare la password al primo accesso.`);
+                
+                closeModal('newClientModal');
+                
+                // Refresh dashboard stats
+                await loadTrainerStats();
+                
+            } catch (error) {
+                Utils.hideLoading(submitBtn);
+                errorDiv.textContent = error.message || 'Errore nella creazione del cliente';
+                errorDiv.style.display = 'block';
+                console.error('Create client error:', error);
+            }
+        });
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                const modalId = e.target.id;
+                closeModal(modalId);
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const openModal = document.querySelector('.modal.show');
+                if (openModal) {
+                    closeModal(openModal.id);
+                }
+            }
+        });
+        
+        function logout() {
+            const confirmLogout = confirm('Sei sicuro di voler uscire?');
+            if (confirmLogout) {
+                GymAPI.logout();
+            }
+        }
+        
+        // Initialize trainer dashboard
+        checkTrainerAccess();
+        
+        // Auto-refresh data every 5 minutes
+        setInterval(() => {
+            if (GymAPI.isAuthenticated()) {
+                loadTrainerStats();
+                loadRecentActivities();
+                loadAttentionClients();
+                loadQuickStats();
+            }
+        }, 5 * 60 * 1000);
+        
+        // Handle tab visibility for refresh
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && GymAPI.isAuthenticated()) {
+                loadTrainerStats();
+                loadRecentActivities();
+            }
+        });
+    </script>
+</body>
+</html>

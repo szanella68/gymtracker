@@ -1,0 +1,79 @@
+# GymTracker Apache Configuration
+RewriteEngine On
+
+# Enable CORS for API requests
+Header always set Access-Control-Allow-Origin "https://zanserver.sytes.net"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+Header always set Access-Control-Allow-Credentials "true"
+
+# Handle preflight OPTIONS requests
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# API calls → Node.js porta 3007 (Reverse Proxy)
+RewriteCond %{REQUEST_URI} ^/gymtracker/api/(.*)$
+RewriteRule ^api/(.*)$ http://localhost:3007/api/$1 [P,L]
+
+# Routing per interfacce separate
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirect root a login principale
+RewriteRule ^$ /gymtracker/utente/index.html [L,R=302]
+
+# Interfaccia utente (DEFAULT per tutti)
+RewriteRule ^utente/?$ /gymtracker/utente/index.html [L,R=302]
+
+# Interfaccia trainer (SOLO per admin - check via JS)
+RewriteRule ^trainer/?$ /gymtracker/trainer/dashboard.html [L,R=302]
+
+# Cache ottimizzato per app dinamica
+<filesMatch "\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$">
+    ExpiresActive On
+    ExpiresDefault "access plus 7 days"
+    Header set Cache-Control "public, max-age=604800"
+</filesMatch>
+
+<filesMatch "\.(html|htm)$">
+    ExpiresActive On
+    ExpiresDefault "access plus 1 hour"
+    Header set Cache-Control "public, max-age=3600"
+</filesMatch>
+
+# Sicurezza
+# Nascondere versione Apache
+ServerTokens Prod
+
+# Proteggere file sensibili
+<FilesMatch "\.(env|log|sql|db|sqlite|json|md)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Prevenire accesso a directory di sistema
+RedirectMatch 404 /\.git
+RedirectMatch 404 /node_modules
+RedirectMatch 404 /database
+
+# Compressione Gzip
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
+
+# Forza HTTPS (se supportato)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Error pages personalizzate
+ErrorDocument 404 /gymtracker/utente/index.html
+ErrorDocument 403 /gymtracker/utente/index.html

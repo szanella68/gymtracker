@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymTracker - I miei Progressi</title>
+    <base href="/gymtracker/">
+    <link rel="stylesheet" href="shared/css/shared.css">
+    <link rel="stylesheet" href="utente/css/utente.css">
+</head>
+<body>
+    <div class="profile-container">
+        <div class="nav-breadcrumb">
+            <a href="utente/dashboard.html" class="breadcrumb-link">🏠 Dashboard</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-current">📊 I miei Progressi</span>
+        </div>
+
+        <div class="profile-header">
+            <h1>📊 I miei Progressi</h1>
+            <div class="header-actions">
+                <button onclick="exportData()" class="btn-secondary">📥 Esporta Dati</button>
+                <button onclick="logout()" class="btn-logout">Esci</button>
+            </div>
+        </div>
+
+        <!-- Progress Overview -->
+        <div class="stats-grid">
+            <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-info">
+                    <h3 id="goalProgress">78%</h3>
+                    <p>Obiettivo mensile</p>
+                </div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%); color: white;">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-info">
+                    <h3 id="currentStreak">12</h3>
+                    <p>Serie attuale (giorni)</p>
+                </div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); color: white;">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-info">
+                    <h3 id="totalWorkouts">156</h3>
+                    <p>Allenamenti totali</p>
+                </div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #e83e8c 0%, #6f42c1 100%); color: white;">
+                <div class="stat-icon">📈</div>
+                <div class="stat-info">
+                    <h3 id="improvement">+15%</h3>
+                    <p>Miglioramento forza</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Charts Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📈 Andamento nel Tempo</h3>
+                <div class="chart-controls">
+                    <select id="chartPeriod" onchange="updateChart()">
+                        <option value="7">Ultimi 7 giorni</option>
+                        <option value="30" selected>Ultimi 30 giorni</option>
+                        <option value="90">Ultimi 3 mesi</option>
+                        <option value="365">Ultimo anno</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <!-- Placeholder for chart - in a real app, you'd use Chart.js or similar -->
+                <div class="mock-chart">
+                    <div class="chart-placeholder">
+                        <div class="chart-icon">📊</div>
+                        <h4>Grafico Aderenza Allenamenti</h4>
+                        <p>Visualizzazione del tuo impegno negli allenamenti nel tempo</p>
+                        <div class="mock-chart-bars">
+                            <div class="chart-bar" style="height: 60%;" title="Settimana 1: 60%"></div>
+                            <div class="chart-bar" style="height: 75%;" title="Settimana 2: 75%"></div>
+                            <div class="chart-bar" style="height: 45%;" title="Settimana 3: 45%"></div>
+                            <div class="chart-bar" style="height: 85%;" title="Settimana 4: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weight Progress -->
+        <div class="card">
+            <div class="card-header">
+                <h3>⚖️ Progressi Peso Corporeo</h3>
+                <button onclick="addWeightEntry()" class="btn-primary">+ Aggiungi Misurazione</button>
+            </div>
+            
+            <div class="weight-history">
+                <div class="weight-entry">
+                    <span class="weight-date">1 Gen 2024</span>
+                    <span class="weight-value">75.2 kg</span>
+                    <span class="weight-change start">Peso iniziale</span>
+                </div>
+                <div class="weight-entry">
+                    <span class="weight-date">15 Gen 2024</span>
+                    <span class="weight-value">74.8 kg</span>
+                    <span class="weight-change down">-0.4 kg</span>
+                </div>
+                <div class="weight-entry">
+                    <span class="weight-date">1 Feb 2024</span>
+                    <span class="weight-value">74.1 kg</span>
+                    <span class="weight-change down">-0.7 kg</span>
+                </div>
+                <div class="weight-entry">
+                    <span class="weight-date">15 Feb 2024</span>
+                    <span class="weight-value">73.5 kg</span>
+                    <span class="weight-change down">-0.6 kg</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strength Progress -->
+        <div class="card">
+            <div class="card-header">
+                <h3>💪 Progressi di Forza</h3>
+            </div>
+            
+            <div class="strength-progress">
+                <div class="exercise-progress">
+                    <div class="exercise-header">
+                        <h4>🏋️ Panca Piana</h4>
+                        <span class="pr-badge">PR: 80kg</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 85%"></div>
+                    </div>
+                    <div class="progress-details">
+                        <span>Partenza: 60kg</span>
+                        <span>Attuale: 80kg (+33%)</span>
+                    </div>
+                </div>
+
+                <div class="exercise-progress">
+                    <div class="exercise-header">
+                        <h4>🦵 Squat</h4>
+                        <span class="pr-badge">PR: 100kg</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%"></div>
+                    </div>
+                    <div class="progress-details">
+                        <span>Partenza: 70kg</span>
+                        <span>Attuale: 100kg (+43%)</span>
+                    </div>
+                </div>
+
+                <div class="exercise-progress">
+                    <div class="exercise-header">
+                        <h4>🏃 Deadlift</h4>
+                        <span class="pr-badge">PR: 120kg</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 90%"></div>
+                    </div>
+                    <div class="progress-details">
+                        <span>Partenza: 80kg</span>
+                        <span>Attuale: 120kg (+50%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goals Progress -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🎯 Stato Obiettivi</h3>
+                <a href="utente/profilo.html#fitness" class="btn-secondary">Modifica Obiettivi</a>
+            </div>
+            
+            <div class="goals-list">
+                <div class="goal-item completed">
+                    <div class="goal-icon">✅</div>
+                    <div class="goal-info">
+                        <h4>Perdere 5kg</h4>
+                        <p>Completato il 15 Feb 2024</p>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="goal-item in-progress">
+                    <div class="goal-icon">🔄</div>
+                    <div class="goal-info">
+                        <h4>Panca piana 100kg</h4>
+                        <p>In corso - Scadenza: Mar 2024</p>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 80%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="goal-item pending">
+                    <div class="goal-icon">⏳</div>
+                    <div class="goal-info">
+                        <h4>Correre 5km in 25 minuti</h4>
+                        <p>Da iniziare - Scadenza: Apr 2024</p>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 25%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Weight Modal -->
+        <div id="weightModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal('weightModal')">&times;</button>
+                <h2>⚖️ Nuova Misurazione</h2>
+                <form id="weightForm">
+                    <div class="form-group">
+                        <label for="weightDate">Data</label>
+                        <input type="date" id="weightDate" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="weightValue">Peso (kg)</label>
+                        <input type="number" id="weightValue" name="weight" step="0.1" min="30" max="200" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="weightNotes">Note (opzionale)</label>
+                        <textarea id="weightNotes" name="notes" rows="3" placeholder="Es: Dopo allenamento, mattino a digiuno..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary w-full">Salva Misurazione</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/core/utils.js"></script>
+    <script>
+        // Auth check
+        if (!GymAPI.isAuthenticated()) {
+            window.location.href = '/gymtracker/utente/';
+        }
+
+        function updateChart() {
+            const period = document.getElementById('chartPeriod').value;
+            console.log(`Updating chart for ${period} days`);
+            // In a real implementation, this would fetch new data and update the chart
+        }
+
+        function addWeightEntry() {
+            // Set today's date as default
+            document.getElementById('weightDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('weightModal').classList.add('show');
+        }
+
+        function exportData() {
+            // Mock export functionality
+            const data = {
+                user: "Cliente",
+                period: "Ultimi 6 mesi",
+                workouts: 156,
+                adherence: "78%",
+                weight_change: "-1.7kg",
+                strength_improvements: {
+                    bench_press: "+33%",
+                    squat: "+43%",
+                    deadlift: "+50%"
+                },
+                export_date: new Date().toISOString()
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `gymtracker-progress-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        function logout() {
+            const confirmLogout = confirm('Sei sicuro di voler uscire?');
+            if (confirmLogout) {
+                GymAPI.logout();
+            }
+        }
+
+        // Weight form handler
+        document.getElementById('weightForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const weightData = {
+                date: formData.get('date'),
+                weight: parseFloat(formData.get('weight')),
+                notes: formData.get('notes')
+            };
+
+            try {
+                // In a real app, this would save to the database
+                console.log('Saving weight data:', weightData);
+                alert('Misurazione salvata con successo!');
+                closeModal('weightModal');
+                e.target.reset();
+                
+                // Refresh weight history (mock)
+                // loadWeightHistory();
+                
+            } catch (error) {
+                alert('Errore nel salvare la misurazione: ' + error.message);
+            }
+        });
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                closeModal(e.target.id);
+            }
+        });
+
+        // Add styles for new components
+        const style = document.createElement('style');
+        style.textContent = `
+            .header-actions {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            
+            .chart-controls {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+            
+            .mock-chart {
+                padding: 40px 20px;
+                text-align: center;
+                background: #f8f9fa;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
+            
+            .chart-icon {
+                font-size: 3rem;
+                margin-bottom: 15px;
+            }
+            
+            .mock-chart-bars {
+                display: flex;
+                justify-content: center;
+                align-items: end;
+                gap: 10px;
+                margin-top: 20px;
+                height: 100px;
+            }
+            
+            .chart-bar {
+                width: 30px;
+                background: linear-gradient(to top, #667eea, #764ba2);
+                border-radius: 3px 3px 0 0;
+                cursor: pointer;
+                transition: opacity 0.2s;
+            }
+            
+            .chart-bar:hover {
+                opacity: 0.8;
+            }
+            
+            .weight-history {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            
+            .weight-entry {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px;
+                border-bottom: 1px solid #e9ecef;
+            }
+            
+            .weight-change.down {
+                color: #28a745;
+                font-weight: 600;
+            }
+            
+            .weight-change.up {
+                color: #dc3545;
+                font-weight: 600;
+            }
+            
+            .weight-change.start {
+                color: #6c757d;
+                font-style: italic;
+            }
+            
+            .exercise-progress {
+                margin-bottom: 25px;
+                padding: 20px;
+                background: #f8f9fa;
+                border-radius: 8px;
+            }
+            
+            .exercise-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+            
+            .pr-badge {
+                background: #ffc107;
+                color: #000;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            
+            .progress-bar {
+                width: 100%;
+                height: 8px;
+                background: #e9ecef;
+                border-radius: 4px;
+                overflow: hidden;
+                margin: 10px 0;
+            }
+            
+            .progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #28a745, #20c997);
+                transition: width 0.3s ease;
+            }
+            
+            .progress-details {
+                display: flex;
+                justify-content: space-between;
+                font-size: 14px;
+                color: #6c757d;
+            }
+            
+            .goals-list {
+                max-height: 400px;
+                overflow-y: auto;
+            }
+            
+            .goal-item {
+                display: flex;
+                gap: 15px;
+                padding: 20px;
+                border: 2px solid #e9ecef;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                transition: border-color 0.2s;
+            }
+            
+            .goal-item.completed {
+                border-color: #28a745;
+                background: #f8fff8;
+            }
+            
+            .goal-item.in-progress {
+                border-color: #ffc107;
+                background: #fffef8;
+            }
+            
+            .goal-item.pending {
+                border-color: #6c757d;
+                background: #f8f9fa;
+            }
+            
+            .goal-icon {
+                font-size: 1.5rem;
+                margin-top: 5px;
+            }
+            
+            .goal-info {
+                flex-grow: 1;
+            }
+            
+            .goal-info h4 {
+                margin-bottom: 5px;
+            }
+            
+            .goal-info p {
+                color: #6c757d;
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+            
+            @media (max-width: 768px) {
+                .header-actions {
+                    width: 100%;
+                    justify-content: center;
+                }
+                
+                .chart-controls {
+                    width: 100%;
+                    justify-content: center;
+                }
+                
+                .weight-entry {
+                    flex-direction: column;
+                    align-items: start;
+                    gap: 5px;
+                }
+                
+                .exercise-header {
+                    flex-direction: column;
+                    align-items: start;
+                    gap: 5px;
+                }
+                
+                .progress-details {
+                    flex-direction: column;
+                    gap: 5px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

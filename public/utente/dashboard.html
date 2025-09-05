@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymTracker - Il mio Dashboard</title>
+    <base href="/gymtracker/">
+    <link rel="stylesheet" href="shared/css/shared.css">
+    <link rel="stylesheet" href="utente/css/utente.css">
+</head>
+<body>
+    <main class="user-dashboard">
+        <div class="dashboard-header">
+            <h1>🏋️ I miei Allenamenti</h1>
+            <div class="user-welcome">
+                <span id="userWelcome">Benvenuto!</span>
+                <button onclick="logout()" class="btn-logout">Esci</button>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🏃</div>
+                <div class="stat-info">
+                    <h3 id="adherenceRate">--</h3>
+                    <p>Aderenza questo mese</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💪</div>
+                <div class="stat-info">
+                    <h3 id="completedWorkouts">--</h3>
+                    <p>Sessioni completate</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-info">
+                    <h3 id="progressTrend">--</h3>
+                    <p>Tendenza progressi</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <div class="nav-menu">
+            <a href="utente/calendario.html" class="nav-card primary">
+                <div class="nav-icon">📅</div>
+                <h3>Il mio Calendario</h3>
+                <p>Allenamenti programmati e da completare</p>
+            </a>
+            
+            <a href="utente/profilo.html" class="nav-card">
+                <div class="nav-icon">👤</div>
+                <h3>Il mio Profilo</h3>
+                <p>Informazioni personali e obiettivi</p>
+            </a>
+            
+            <a href="utente/report.html" class="nav-card">
+                <div class="nav-icon">📊</div>
+                <h3>I miei Progressi</h3>
+                <p>Statistiche e analisi performance</p>
+            </a>
+        </div>
+        
+        <!-- Prossime Sessioni -->
+        <div class="upcoming-sessions">
+            <h2>🎯 Prossimi Allenamenti</h2>
+            <div id="upcomingSessions">
+                <!-- Popolato dinamicamente -->
+                <div class="empty-state">
+                    <div class="empty-icon">📅</div>
+                    <h3>Nessun allenamento programmato</h3>
+                    <p>I tuoi prossimi allenamenti appariranno qui quando il trainer li assegnerà.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h3>⚡ Azioni Rapide</h3>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-card" onclick="window.location.href='/gymtracker/utente/profilo.html#goals'">
+                    <div class="nav-icon">🎯</div>
+                    <h3>Aggiorna Obiettivi</h3>
+                    <p>Modifica i tuoi obiettivi fitness</p>
+                </div>
+                
+                <div class="nav-card" onclick="contactTrainer()">
+                    <div class="nav-icon">💬</div>
+                    <h3>Contatta Trainer</h3>
+                    <p>Richiedi supporto o informazioni</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/core/utils.js"></script>
+    <script>
+        // Auth check
+        if (!GymAPI.isAuthenticated()) {
+            window.location.href = '/gymtracker/utente/';
+        }
+        
+        // Load user dashboard data
+        async function loadDashboard() {
+            try {
+                // Load user profile
+                const userProfile = await GymAPI.getCurrentUser();
+                document.getElementById('userWelcome').textContent = 
+                    `Ciao, ${userProfile.profile?.full_name || 'Atleta'}!`;
+                
+                // Check if user is actually admin trying to access client interface
+                if (userProfile.profile?.user_type === 'admin') {
+                    const switchToAdmin = confirm('Sei un amministratore. Vuoi passare all\'interfaccia trainer?');
+                    if (switchToAdmin) {
+                        window.location.href = '/gymtracker/trainer/dashboard.html';
+                        return;
+                    }
+                }
+                
+                // Load stats and upcoming sessions
+                await Promise.all([
+                    loadStats(),
+                    loadUpcomingSessions()
+                ]);
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                if (error.status === 401) {
+                    GymAPI.removeToken();
+                    window.location.href = '/gymtracker/utente/';
+                } else {
+                    showDashboardError('Errore nel caricamento dei dati. Riprova più tardi.');
+                }
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const stats = await GymAPI.getUserStats();
+                
+                // Update stat cards
+                document.getElementById('adherenceRate').textContent = stats.adherence_rate + '%';
+                document.getElementById('completedWorkouts').textContent = stats.completed_workouts;
+                
+                // Calculate progress trend
+                let trendText = '📈 Positiva';
+                if (stats.adherence_rate < 50) {
+                    trendText = '📉 Da migliorare';
+                } else if (stats.adherence_rate < 80) {
+                    trendText = '📊 Stabile';
+                }
+                document.getElementById('progressTrend').textContent = trendText;
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                // Show default values instead of failing
+                document.getElementById('adherenceRate').textContent = '0%';
+                document.getElementById('completedWorkouts').textContent = '0';
+                document.getElementById('progressTrend').textContent = '📊 Inizia ora';
+            }
+        }
+        
+        async function loadUpcomingSessions() {
+            try {
+                // This would be replaced with actual API call when calendar endpoints are implemented
+                // const sessions = await GymAPI.get('/calendar/upcoming');
+                
+                // For now, show empty state or sample data
+                const sessionsContainer = document.getElementById('upcomingSessions');
+                
+                // Sample upcoming sessions (remove when API is ready)
+                const sampleSessions = [];
+                
+                if (sampleSessions.length === 0) {
+                    sessionsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📅</div>
+                            <h3>Nessun allenamento programmato</h3>
+                            <p>I tuoi prossimi allenamenti appariranno qui quando il trainer li assegnerà.</p>
+                            <button class="btn-primary" onclick="window.location.href='/gymtracker/utente/calendario.html'">
+                                Visualizza Calendario
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    sessionsContainer.innerHTML = sampleSessions.map(session => `
+                        <div class="session-item">
+                            <div class="session-info">
+                                <h4>${session.program_name}</h4>
+                                <p>${Utils.formatDateTime(session.scheduled_date)}</p>
+                            </div>
+                            <span class="session-status ${session.status}">${session.status}</span>
+                        </div>
+                    `).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading upcoming sessions:', error);
+                document.getElementById('upcomingSessions').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <h3>Errore nel caricamento</h3>
+                        <p>Impossibile caricare i prossimi allenamenti.</p>
+                        <button class="btn-primary" onclick="loadUpcomingSessions()">Riprova</button>
+                    </div>
+                `;
+            }
+        }
+        
+        function showDashboardError(message) {
+            const dashboard = document.querySelector('.user-dashboard');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            dashboard.insertBefore(errorDiv, dashboard.firstChild);
+        }
+        
+        function contactTrainer() {
+            // This would typically open a messaging system or contact form
+            alert('Funzionalità in sviluppo. Per ora contatta il trainer direttamente.');
+        }
+        
+        function logout() {
+            const confirmLogout = confirm('Sei sicuro di voler uscire?');
+            if (confirmLogout) {
+                GymAPI.logout();
+            }
+        }
+        
+        // Initialize dashboard
+        loadDashboard();
+        
+        // Refresh data every 5 minutes
+        setInterval(() => {
+            loadStats();
+            loadUpcomingSessions();
+        }, 5 * 60 * 1000);
+        
+        // Handle visibility change to refresh when user comes back to tab
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && GymAPI.isAuthenticated()) {
+                loadStats();
+                loadUpcomingSessions();
+            }
+        });
+    </script>
+</body>
+</html>
