@@ -1,76 +1,50 @@
-@echo off
-echo ========================================
-echo   GymTracker Dual Interface Setup
-echo ========================================
+@echo on
+setlocal EnableExtensions
 
-echo Verificando installazione Node.js...
-node --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ERRORE: Node.js non trovato. Installa Node.js prima di continuare.
-    echo Scarica da: https://nodejs.org/
-    pause
-    exit /b 1
+rem === PERCORSO GYMTRACKER ===
+set "GYMTRACKER_DIR=C:\filepubblici\gymtracker"
+set "GYMTRACKER_PORT=3007"
+
+cd /d "%GYMTRACKER_DIR%"
+
+where node
+if errorlevel 1 (
+  echo [ERRORE] Node.js non nel PATH.
+  goto HOLD
 )
 
-echo Installando dipendenze Node.js...
-npm install
-if %errorlevel% neq 0 (
-    echo ERRORE: Fallita installazione dipendenze NPM
-    pause
-    exit /b 1
+rem evita doppio avvio: se 3007 gia' in LISTENING non rilancia
+netstat -ano | findstr /r /c:":%GYMTRACKER_PORT% .*LISTENING" >nul
+if not errorlevel 1 (
+  echo [GymTracker] gia' attivo su :%GYMTRACKER_PORT%. Niente rilancio.
+  goto HOLD
 )
 
-echo.
-echo Avviando servizi...
-echo.
-
-echo Tentativo avvio Apache...
-net start apache2.4 >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ✓ Apache avviato con successo
-) else (
-    echo ⚠ Impossibile avviare Apache automaticamente
-    echo   Assicurati che Apache sia installato e configurato correttamente
+rem Carica variabili da .env se esiste
+if exist ".env" (
+  echo Caricamento variabili da .env...
+  for /f "usebackq tokens=1,2 delims==" %%a in (".env") do (
+    if not "%%a"=="" if not "%%b"=="" set "%%a=%%b"
+  )
 )
-timeout /t 2 /nobreak >nul
 
-echo.
-echo Avviando Node.js Backend (porta 3007)...
-cd /d "%~dp0"
-start "GymTracker Backend" cmd /k "npm run dev"
+rem Fallback se non definite in .env
+if not defined PORT set "PORT=%GYMTRACKER_PORT%"
+if not defined NODE_ENV set "NODE_ENV=production"
+if not defined FRONTEND_URL set "FRONTEND_URL=https://zanserver.sytes.net"
 
-echo Attendo avvio Node.js...
-timeout /t 5 /nobreak >nul
+echo -----------------------------------------
+echo [RUN] GYMTRACKER PRODUZIONE su porta %PORT%
+echo Environment: %NODE_ENV%
+echo Frontend URL: %FRONTEND_URL%
+echo -----------------------------------------
+node -v
+echo Avvio server.js...
+node server.js
+echo [EXIT] Codice: %errorlevel%
 
+:HOLD
 echo.
-echo ========================================
-echo   Setup completato!
-echo ========================================
-echo.
-echo Interfacce disponibili:
-echo - Login principale: https://zanserver.sytes.net/gymtracker/
-echo - Dashboard Cliente: https://zanserver.sytes.net/gymtracker/utente/dashboard.html
-echo - Dashboard Trainer: https://zanserver.sytes.net/gymtracker/trainer/dashboard.html
-echo - API Health: http://localhost:3007/api/health
-echo.
-echo Credenziali di default:
-echo - Admin: admin@gymtracker.local / admin123
-echo - Oppure registrati come nuovo cliente
-echo.
-echo Note:
-echo - Admin definiti manualmente nel database (user_type='admin')
-echo - Tutti i nuovi registrati sono automaticamente clienti
-echo - Il backend Node.js deve rimanere in esecuzione
-echo.
-echo Premi un tasto per aprire il browser...
+echo (GymTracker) Finestra bloccata. Premi un tasto per chiudere...
 pause >nul
-
-start https://zanserver.sytes.net/gymtracker/
-
-echo.
-echo Per fermare il sistema:
-echo - Chiudi la finestra del backend Node.js
-echo - Opzionalmente: net stop apache2.4
-echo.
-echo Premi un tasto per chiudere...
-pause >nul
+endlocal

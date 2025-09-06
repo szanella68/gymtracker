@@ -1,14 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: === Config ===
-set "REPO_DIR=C:\filepubblici\Nicola"
+:: === Config GymTracker ===
+set "REPO_DIR=C:\filepubblici\gymtracker"
 
 cd /d "%REPO_DIR%" || (echo Repo non trovata: %REPO_DIR% & pause & exit /b 1)
 for /f "delims=" %%x in ('git rev-parse --is-inside-work-tree 2^>nul') do set INSIDE=%%x
 if not "%INSIDE%"=="true" (echo Non e' una repo Git. & pause & exit /b 1)
 
-echo ===== GIT SYNC =====
+echo ===== 🏋️ GYMTRACKER GIT SYNC =====
 
 :: Crea .gitkeep nelle directory vuote (escluse .git e node_modules)
 for /f "delims=" %%D in ('dir /ad /b /s') do (
@@ -27,15 +27,15 @@ git diff --cached --quiet || set "HAVECHANGES=1"
 
 if defined HAVECHANGES (
   set "commit_msg="
-  set /p commit_msg="Messaggio commit (default: sync): "
-  if not defined commit_msg set "commit_msg=sync"
+  set /p commit_msg="Messaggio commit (default: gymtracker update): "
+  if not defined commit_msg set "commit_msg=gymtracker update"
   git commit -m "!commit_msg!" || (echo Commit fallito. & pause & exit /b 1)
 ) else (
   echo Nessuna modifica da commitare.
 )
 
 for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD') do set "BRANCH=%%b"
-if not defined BRANCH set "BRANCH=master"
+if not defined BRANCH set "BRANCH=main"
 
 :: Se il branch remoto non esiste, crea upstream; altrimenti rebase+push
 git ls-remote --exit-code --heads origin %BRANCH% >nul 2>&1
