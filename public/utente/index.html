@@ -28,6 +28,8 @@
                     <input type="password" id="loginPassword" name="password" required autocomplete="current-password">
                 </div>
                 <button type="submit" class="btn-primary">Accedi</button>
+                <div style="text-align:center; margin:10px 0; color:#6c757d;">oppure</div>
+                <button type="button" class="btn btn-secondary w-full" onclick="AuthSupabase.loginWith('google')">Accedi con Google</button>
                 <div class="auth-error" id="loginError"></div>
                 
                 <div class="auth-switch">
@@ -57,6 +59,8 @@
                     <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password">
                 </div>
                 <button type="submit" class="btn-primary">Registrati</button>
+                <div style="text-align:center; margin:10px 0; color:#6c757d;">oppure</div>
+                <button type="button" class="btn btn-secondary w-full" onclick="AuthSupabase.loginWith('google')">Registrati con Google</button>
                 <div class="auth-error" id="registerError"></div>
                 
                 <div class="auth-switch">
@@ -69,6 +73,7 @@
     </div>
 
     <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/auth-supabase.js"></script>
     <script src="shared/js/core/utils.js"></script>
     <script>
         // Check se già autenticato
@@ -170,8 +175,8 @@
                     user_type: 'standard' // Tutti i nuovi utenti sono clienti
                 });
                 
-                // Successful registration - redirect to client dashboard
-                window.location.href = '/gymtracker/utente/dashboard.html';
+                // Successful registration - redirect to client profile to complete data
+                window.location.href = '/gymtracker/utente/profilo.html';
                 
             } catch (error) {
                 Utils.hideLoading(submitBtn);
@@ -186,6 +191,13 @@
             }
         });
         
+        // Support deep-linking to register form (from landing)
+        (function handleHash(){
+            if (window.location.hash === '#register') {
+                showRegisterForm();
+            }
+        })();
+
         // Redirect based on user role in database
         async function redirectBasedOnRole() {
             try {
@@ -221,18 +233,7 @@
             }
         });
         
-        // Demo credentials hint (remove in production)
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            setTimeout(() => {
-                const loginForm = document.getElementById('loginForm');
-                if (loginForm.classList.contains('active')) {
-                    const infoDiv = document.createElement('div');
-                    infoDiv.className = 'info-message';
-                    infoDiv.innerHTML = '<strong>Demo:</strong> admin@gymtracker.local / admin123 (Admin)<br>Oppure registrati come nuovo cliente';
-                    loginForm.appendChild(infoDiv);
-                }
-            }, 1000);
-        }
+        // Nessun hint di credenziali demo in produzione
     </script>
 </body>
 </html>

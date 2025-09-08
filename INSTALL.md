@@ -34,32 +34,28 @@ cd gymtracker
 npm install
 ```
 
-### 3. Environment Configuration
+### 3. Environment Configuration (Supabase)
 Copy and edit the environment file:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your settings:
+Edit `.env` with your settings (Supabase mode):
 ```env
-# Server Configuration
+# Server
 PORT=3007
 NODE_ENV=production
+AUTH_PROVIDER=supabase
+DB_PROVIDER=supabase
 
-# Security
-JWT_SECRET=your-super-secure-jwt-secret-key-change-this-in-production
-JWT_EXPIRES_IN=7d
-BCRYPT_ROUNDS=12
+# Supabase
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+# Optional for schema bootstrap (service role connection string)
+# DATABASE_URL=postgresql://postgres:password@HOST:PORT/postgres?options=project%3Dyourproject
 
-# Database
-DATABASE_PATH=./database/gymtracker.db
-
-# CORS Origins (adjust for your domain)
+# Frontend
 FRONTEND_URL=https://your-domain.com
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
 ```
 
 ### 4. Apache Configuration
@@ -96,10 +92,8 @@ ProxyPass /gymtracker/api/ http://localhost:3007/api/
 ProxyPassReverse /gymtracker/api/ http://localhost:3007/api/
 ```
 
-### 5. Database Setup
-The database will be created automatically on first run with:
-- Default admin user: `admin@gymtracker.local` / `admin123`
-- Sample exercises and schema
+### 5. Database Setup (Supabase)
+If `DATABASE_URL` is provided, the server ensures the `user_profiles` table exists on Supabase. Admin accounts are managed via Supabase (e.g., set user metadata `user_type=admin`).
 
 ### 6. File Permissions
 Ensure proper permissions (Linux/macOS):
@@ -124,15 +118,13 @@ npm start
 
 ### Windows Quick Start
 ```cmd
-start_gymtracker.bat
+start_server.bat
 ```
 
-This script will:
-1. Check Node.js installation
-2. Install dependencies
-3. Start Apache (if configured)
-4. Launch Node.js backend
-5. Open browser to the application
+This script will open two windows:
+1. Apache (if available)
+2. GymTracker backend (auto-install dependencies if missing)
+Then it opens the browser to the app.
 
 ## 🔗 Access URLs
 
@@ -170,27 +162,13 @@ To change the Node.js port, update both:
 2. Apache config: Update proxy URLs to match
 
 ### Database Location
-To use a different database location:
-```env
-DATABASE_PATH=/custom/path/gymtracker.db
-```
+Non applicabile in modalità Supabase.
 
 ## 👥 User Management
 
-### Default Accounts
-- **Admin**: `admin@gymtracker.local` / `admin123`
-  - Full access to trainer interface
-  - Can manage all clients
-  - Can create new users
-
-### Creating Additional Admins
-1. Register new user through interface (becomes standard client)
-2. Manually update database:
-```sql
-UPDATE users SET user_type = 'admin' WHERE email = 'trainer@example.com';
-```
-
-Or use the admin interface to create new clients and then promote them.
+### Admin Accounts
+- Gli admin sono gestiti da Supabase: imposta `user_type=admin` nei metadata dell'utente.
+- I nuovi utenti sono `standard` per impostazione predefinita.
 
 ## 🐛 Troubleshooting
 
@@ -276,9 +254,6 @@ Full documentation: [README.md](README.md)
 
 ### Backup Strategy
 ```bash
-# Backup database
-cp database/gymtracker.db backups/gymtracker-$(date +%Y%m%d).db
-
 # Backup configuration
 cp .env backups/.env-backup-$(date +%Y%m%d)
 ```

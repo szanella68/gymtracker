@@ -1,6 +1,6 @@
 # 🏋️ GymTracker - Dual Interface Fitness Management System
 
-Un sistema completo per la gestione di palestre con interfacce separate per clienti e trainer, basato su Node.js + SQLite + Apache.
+Un sistema completo per la gestione di palestre con interfacce separate per clienti e trainer, basato su Node.js + Supabase (Auth/Postgres) + Apache.
 
 ## 🎯 Caratteristiche Principali
 
@@ -19,11 +19,9 @@ Un sistema completo per la gestione di palestre con interfacce separate per clie
 - Controllo accessi basato su ruoli
 
 ### 🔒 **Sicurezza e Autenticazione**
-- JWT tokens per sessioni sicure
-- Gestione ruoli (standard/admin)
-- Hashing password con bcrypt
+- Supabase Auth (email/password, OAuth)
+- Gestione ruoli (standard/admin) via user metadata
 - Protezione CORS configurabile
-- Logout da tutti i dispositivi
 
 ## 📁 Struttura del Progetto
 
@@ -37,7 +35,7 @@ gymtracker/
 ├── 📄 apache_implementation_guide.md # Guida implementazione
 │
 ├── 🗂️ config/
-│   └── database.js                 # Configurazione database SQLite
+│   └── supabase.js                 # Client/Schema Supabase
 │
 ├── 🗂️ routes/
 │   ├── auth.js                     # API autenticazione
@@ -46,8 +44,8 @@ gymtracker/
 ├── 🗂️ middleware/
 │   └── auth.js                     # Middleware autenticazione JWT
 │
-├── 🗂️ database/
-│   └── gymtracker.db               # Database SQLite (auto-creato)
+├── 🗂️ database/ (legacy)
+│   └── (non più utilizzato)
 │
 └── 🗂️ public/                      # Frontend statico
     ├── index.html                  # Redirect pagina principale
@@ -96,12 +94,15 @@ gymtracker/
    npm run dev
    ```
 
-### Configurazione Ambiente
+### Configurazione Ambiente (Supabase)
 Modifica il file `.env` secondo le tue necessità:
 ```env
 PORT=3007
-JWT_SECRET=your-super-secure-jwt-secret
-DATABASE_PATH=./database/gymtracker.db
+NODE_ENV=production
+AUTH_PROVIDER=supabase
+DB_PROVIDER=supabase
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 FRONTEND_URL=https://zanserver.sytes.net
 ```
 
@@ -114,9 +115,9 @@ FRONTEND_URL=https://zanserver.sytes.net
 | **Dashboard Trainer** | `/gymtracker/trainer/dashboard.html` | Interfaccia admin |
 | **API Health** | `/gymtracker/api/health` | Controllo stato backend |
 
-### Credenziali di Default
-- **Admin**: `admin@gymtracker.local` / `admin123`
-- **Nuovi utenti**: registrazione automatica come clienti
+### Ruoli
+- I nuovi utenti sono di default "standard".
+- Gli admin sono determinati da un campo metadata `user_type=admin` su Supabase Auth.
 
 ## 🛠️ API Endpoints
 
@@ -168,10 +169,7 @@ PUT  /api/users/:id        // Aggiorna utente (admin)
 ## 🔧 Personalizzazione
 
 ### Aggiungere nuovi Admin
-Modifica direttamente il database SQLite:
-```sql
-UPDATE users SET user_type = 'admin' WHERE email = 'trainer@example.com';
-```
+Imposta nei metadata dell'utente in Supabase Auth il campo `user_type=admin`. In assenza di tale metadata, l'utente è considerato `standard`.
 
 ### Colori e Stili
 - **Cliente**: Colori motivazionali (verde, blu, arancione)
@@ -191,7 +189,7 @@ UPDATE users SET user_type = 'admin' WHERE email = 'trainer@example.com';
 ### Tabelle Principali
 - `users` - Utenti del sistema
 - `user_profiles` - Profili dettagliati
-- `user_sessions` - Sessioni JWT attive
+- (legacy) `user_sessions` - Sessioni JWT attive
 - `workout_programs` - Programmi allenamento
 - `workout_sessions` - Sessioni specifiche
 - `exercises` - Database esercizi

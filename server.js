@@ -7,7 +7,8 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
-const { initDatabase } = require('./config/database');
+const trainerRoutes = require('./routes/trainer');
+const { ensureSupabaseSchema } = require('./config/supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3007;
@@ -46,6 +47,7 @@ app.use('/gymtracker', express.static(path.join(__dirname, 'public')));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/trainer', trainerRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -79,8 +81,9 @@ app.use((error, req, res, next) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    await initDatabase();
-    console.log('✅ Database initialized successfully');
+    const dbProvider = (process.env.DB_PROVIDER || 'supabase').toLowerCase();
+    await ensureSupabaseSchema();
+    console.log('✅ Supabase mode: schema ensured');
     
     app.listen(PORT, () => {
       console.log('========================================');
@@ -90,6 +93,7 @@ async function startServer() {
       console.log(`📱 Frontend: https://zanserver.sytes.net/gymtracker/`);
       console.log(`🔗 API Health: http://localhost:${PORT}/api/health`);
       console.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🗄  DB Provider: ${dbProvider}`);
       console.log('========================================');
     });
   } catch (error) {

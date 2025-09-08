@@ -3,14 +3,14 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 echo ===========================
-echo   🛑 STOP GYMTRACKER (porta 3007)
+echo   🛑 STOP GYMTRACKER (porta 3010)
 echo ===========================
 
-set "PORT=3007"
+set "PORT=3010"
 set "PID="
 set "PROC="
 
-rem -- Trova il PID che ascolta su 3007 --
+rem -- Trova il PID che ascolta su 3010 --
 for /f "tokens=5" %%A in ('netstat -ano ^| findstr /r /c:":%PORT% .*LISTENING"') do set "PID=%%A"
 
 if not defined PID (

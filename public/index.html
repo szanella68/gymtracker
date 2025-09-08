@@ -1,15 +1,73 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymTracker</title>
-    <script>
-        // Redirect immediato al sistema principale
-        window.location.href = '/gymtracker/utente/';
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymTracker - Il tuo Personal Trainer Digitale</title>
+  <base href="/gymtracker/">
+  <link rel="stylesheet" href="shared/css/shared.css">
+  <style>
+    .hero {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      color: #fff;
+      padding: 4rem 1.5rem;
+      text-align: center;
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-content h1 { font-size: 2.6rem; font-weight: 800; margin-bottom: 1rem; }
+    .hero-content p { font-size: 1.15rem; margin-bottom: 2rem; opacity: .95; }
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .cta-button { background: #fff; color: #0f172a; padding: 1rem 1.5rem; border: 2px solid #fff; border-radius: 10px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all .2s; text-decoration: none; display: inline-flex; align-items: center; gap: .5rem; }
+    .cta-button:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.15); }
+    .cta-button.secondary { background: transparent; color: #fff; border-color: #fff; }
+    .cta-button.secondary:hover { background: #fff; color: #10b981; }
+    .mission { padding: 3.5rem 1.5rem; background: #f9fafb; text-align: center; }
+    .mission h2 { font-size: 1.8rem; margin-bottom: 1.2rem; color: #1f2937; }
+    .mission p { font-size: 1.05rem; max-width: 720px; margin: 0 auto; color: #6b7280; line-height: 1.8; }
+    .build-version { text-align: center; font-size: .85rem; color: #6b7280; margin: .5rem 0 1.2rem; }
+    @media (max-width: 640px) {
+      .hero-content h1 { font-size: 2rem; }
+      .hero-content p { font-size: 1rem; }
+      .hero { padding: 3rem 1rem; }
+      .hero-buttons { flex-direction: column; align-items: center; }
+    }
+  </style>
 </head>
 <body>
-    <p>Reindirizzamento in corso...</p>
+  <!-- Header pubblico -->
+  <div data-include="shared/partials/header_public.html"></div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Ciao, sono Nicola: il tuo Personal Trainer online</h1>
+      <p>Creo piani di allenamento su misura per i tuoi obiettivi. Con l’app segui le sessioni, registri i progressi e io ti guido passo dopo passo.</p>
+      <div class="hero-buttons">
+        <a class="cta-button" href="utente/#register">🚀 Inizia ora</a>
+        <a class="cta-button secondary" href="#come-funziona">ℹ️ Scopri come funziona</a>
+        <a class="cta-button secondary" href="utente/">🔐 Accedi</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Come funziona -->
+  <section class="mission" id="come-funziona">
+    <h2>Come funziona</h2>
+    <p>
+      1) Iscriviti e compila il profilo (obiettivi, livello, preferenze).<br>
+      2) Ti contatto se servono dettagli, poi preparo il tuo piano dedicato.<br>
+      3) Trovi le sessioni nell’app: allenati, registra pesi/serie e monitora i progressi.<br>
+      4) Aggiorniamo insieme il piano per crescere in modo costante e sicuro.
+    </p>
+  </section>
+
+  <!-- Footer -->
+  <div data-include="shared/partials/footer.html"></div>
+  <div class="build-version">Versione: 1.0.0</div>
+
+  <script src="shared/js/include.js"></script>
 </body>
 </html>

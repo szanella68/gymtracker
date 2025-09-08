@@ -1,6 +1,10 @@
 // GymTracker API Client
 class GymAPI {
-  static baseURL = window.location.origin + '/api';
+  static baseURL = (() => {
+    const p = window.location.pathname || '';
+    const prefix = p.startsWith('/gymtracker') ? '/gymtracker/api' : '/api';
+    return window.location.origin + prefix;
+  })();
   
   // Get auth token from localStorage
   static getToken() {

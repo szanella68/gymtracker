@@ -22,7 +22,7 @@ gymtracker/
 ├── 📄 start_gymtracker.bat         # Windows startup script
 │
 ├── 📂 config/                      # Configuration files
-│   └── database.js                 # SQLite database configuration
+│   └── supabase.js                 # Supabase client & schema bootstrap
 │
 ├── 📂 middleware/                  # Express middleware
 │   └── auth.js                     # JWT authentication middleware
@@ -31,8 +31,8 @@ gymtracker/
 │   ├── auth.js                     # Authentication endpoints
 │   └── users.js                    # User management endpoints
 │
-├── 📂 database/                    # Database files (auto-created, git-ignored)
-│   └── gymtracker.db               # SQLite database file
+├── 📂 database/ (legacy)           # Legacy SQLite files (not used)
+│   └── (deprecated)
 │
 ├── 📂 logs/                        # Log files (git-ignored)
 │   ├── access.log
@@ -77,11 +77,11 @@ gymtracker/
     └── [various packages...]
 ```
 
-## 📊 Database Schema
+## 📊 Database Schema (legacy)
 
 ### Tables Overview
 ```
-users
+users (legacy local)
 ├── id (PRIMARY KEY)
 ├── email (UNIQUE)
 ├── password_hash
@@ -92,9 +92,8 @@ users
 ├── last_login
 └── is_active
 
-user_profiles
-├── id (PRIMARY KEY)
-├── user_id (FOREIGN KEY → users.id)
+user_profiles (Supabase)
+├── id (PRIMARY KEY, UUID = auth.users.id)
 ├── phone
 ├── date_of_birth
 ├── gender
@@ -108,7 +107,7 @@ user_profiles
 ├── created_at
 └── updated_at
 
-user_sessions
+user_sessions (legacy local)
 ├── id (PRIMARY KEY)
 ├── user_id (FOREIGN KEY → users.id)
 ├── session_token (UNIQUE)
@@ -119,7 +118,7 @@ user_sessions
 ├── user_agent
 └── is_active
 
-workout_programs
+workout_programs (legacy local)
 ├── id (PRIMARY KEY)
 ├── name
 ├── description
@@ -130,7 +129,7 @@ workout_programs
 ├── created_at
 └── updated_at
 
-exercises
+exercises (legacy local)
 ├── id (PRIMARY KEY)
 ├── name
 ├── category
@@ -140,7 +139,7 @@ exercises
 ├── difficulty_level
 └── created_at
 
-workout_sessions
+workout_sessions (legacy local)
 ├── id (PRIMARY KEY)
 ├── user_id (FOREIGN KEY → users.id)
 ├── program_id (FOREIGN KEY → workout_programs.id)
@@ -153,7 +152,7 @@ workout_sessions
 ├── created_at
 └── updated_at
 
-workout_logs
+workout_logs (legacy local)
 ├── id (PRIMARY KEY)
 ├── session_id (FOREIGN KEY → workout_sessions.id)
 ├── exercise_id (FOREIGN KEY → exercises.id)

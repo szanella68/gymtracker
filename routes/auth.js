@@ -1,173 +1,133 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
-const { database } = require('../config/database');
+// Supabase-only auth routes
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Register new user
+// Register new user via Supabase
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, full_name, user_type = 'standard' } = req.body;
-
-    // Validation
+    const { email, password, full_name } = req.body;
     if (!email || !password || !full_name) {
-      return res.status(400).json({ 
-        error: 'Email, password, and full name are required' 
-      });
+      return res.status(400).json({ error: 'Email, password, and full name are required' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ 
-        error: 'Password must be at least 6 characters long' 
-      });
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return res.status(500).json({ error: 'Supabase not configured' });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
-
-    // Only admin can create admin users
-    const finalUserType = user_type === 'admin' ? 'standard' : user_type;
-
-    // Check if user already exists
-    const existingUser = await database.getQuery(
-      'SELECT id FROM users WHERE email = ?',
-      [email.toLowerCase()]
-    );
-
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-
-    // Hash password
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
-    const password_hash = await bcrypt.hash(password, saltRounds);
-
-    // Create user
-    const userResult = await database.runQuery(
-      'INSERT INTO users (email, password_hash, full_name, user_type) VALUES (?, ?, ?, ?)',
-      [email.toLowerCase(), password_hash, full_name, finalUserType]
-    );
-
-    // Create user profile
-    await database.runQuery(
-      'INSERT INTO user_profiles (user_id) VALUES (?)',
-      [userResult.id]
-    );
-
-    // Create session token
-    const token = jwt.sign(
-      { userId: userResult.id, email: email.toLowerCase(), type: finalUserType },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
-    // Store session in database
-    const expiresAt = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)); // 7 days
-    await database.runQuery(
-      'INSERT INTO user_sessions (user_id, session_token, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
-      [userResult.id, token, expiresAt.toISOString(), req.ip, req.get('User-Agent')]
-    );
-
-    // Update last login
-    await database.runQuery(
-      'UPDATE users SET last_login = datetime(\'now\') WHERE id = ?',
-      [userResult.id]
-    );
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      user: {
-        id: userResult.id,
-        email: email.toLowerCase(),
-        full_name: full_name,
-        user_type: finalUserType
+    const resp = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
       },
-      session: {
-        access_token: token,
-        expires_in: process.env.JWT_EXPIRES_IN || '7d'
-      }
+      body: JSON.stringify({ email, password, data: { full_name } })
     });
 
+    const data = await resp.json();
+    if (!resp.ok) {
+      return res.status(resp.status).json({ error: data?.msg || data?.error_description || 'Registration failed' });
+    }
+
+    // If session is returned (email confirmations disabled), ensure local user and return token
+    let accessToken = data?.access_token;
+    let expiresIn = data?.expires_in;
+    let supaUser = data?.user;
+
+    if (accessToken) {
+      // fetch user with token to get canonical data
+      const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` }
+      });
+      supaUser = await userRes.json();
+    }
+
+    if (supaUser?.id) {
+      return res.status(201).json({
+        message: 'User registered successfully',
+        user: { id: supaUser.id, email: supaUser.email, full_name: full_name, user_type: 'standard' },
+        session: accessToken ? { access_token: accessToken, expires_in: expiresIn || '3600' } : null
+      });
+    }
+
+    // If confirmation required, no user/session present
+    return res.status(201).json({ message: 'Registration initiated. Check your email to confirm.' });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });
   }
 });
 
-// Login user
+// Login via Supabase password grant
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
-    if (!email || !password) {
-      return res.status(400).json({ 
-        error: 'Email and password are required' 
-      });
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return res.status(500).json({ error: 'Supabase not configured' });
     }
 
-    // Get user from database
-    const user = await database.getQuery(
-      'SELECT * FROM users WHERE email = ? AND is_active = 1',
-      [email.toLowerCase()]
-    );
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    const resp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      return res.status(resp.status).json({ error: data?.msg || data?.error_description || 'Login failed' });
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
-    
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+  const accessToken = data.access_token;
+  const expiresIn = data.expires_in;
+
+    // fetch user for mapping
+  const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` }
+  });
+  const supaUser = await userRes.json();
+
+  // Ensure profile exists for new users (via REST with user token) without overwriting existing user_type
+  try {
+    const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(supaUser.id)}&select=id`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` }
+    });
+    if (checkRes.ok) {
+      const arr = await checkRes.json();
+      if (!Array.isArray(arr) || arr.length === 0) {
+        await fetch(`${SUPABASE_URL}/rest/v1/user_profiles`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=ignore-duplicates'
+          },
+          body: JSON.stringify({ id: supaUser.id, email: supaUser.email })
+        });
+      }
     }
+  } catch {}
 
-    // Deactivate old sessions for this user (optional - for security)
-    await database.runQuery(
-      'UPDATE user_sessions SET is_active = 0 WHERE user_id = ? AND is_active = 1',
-      [user.id]
-    );
-
-    // Create new session token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, type: user.user_type },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
-    // Store session in database
-    const expiresAt = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)); // 7 days
-    await database.runQuery(
-      'INSERT INTO user_sessions (user_id, session_token, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
-      [user.id, token, expiresAt.toISOString(), req.ip, req.get('User-Agent')]
-    );
-
-    // Update last login
-    await database.runQuery(
-      'UPDATE users SET last_login = datetime(\'now\') WHERE id = ?',
-      [user.id]
-    );
-
+    const metaRole = (supaUser.user_metadata?.user_type || supaUser.user_metadata?.role || '').toString().toLowerCase();
     res.json({
       message: 'Login successful',
       user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        user_type: user.user_type
+        id: supaUser.id,
+        email: supaUser.email,
+        full_name: (supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || supaUser.email),
+        user_type: metaRole === 'admin' ? 'admin' : 'standard'
       },
-      session: {
-        access_token: token,
-        expires_in: process.env.JWT_EXPIRES_IN || '7d'
-      }
+      session: { access_token: accessToken, expires_in: String(expiresIn) }
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
@@ -177,17 +137,7 @@ router.post('/login', async (req, res) => {
 // Logout user
 router.post('/logout', authenticateToken, async (req, res) => {
   try {
-    // Deactivate current session
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (token) {
-      await database.runQuery(
-        'UPDATE user_sessions SET is_active = 0 WHERE session_token = ?',
-        [token]
-      );
-    }
-
+    // For Supabase tokens, logout is client-side (clear token). We just acknowledge.
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('Logout error:', error);
@@ -198,57 +148,31 @@ router.post('/logout', authenticateToken, async (req, res) => {
 // Logout from all devices
 router.post('/logout-all', authenticateToken, async (req, res) => {
   try {
-    // Deactivate all sessions for this user
-    await database.runQuery(
-      'UPDATE user_sessions SET is_active = 0 WHERE user_id = ? AND is_active = 1',
-      [req.user.id]
-    );
-
-    res.json({ message: 'Logged out from all devices successfully' });
+    // Supabase manages sessions; client should revoke tokens
+    res.json({ message: 'Logged out from all devices successfully (Supabase)' });
   } catch (error) {
-    console.error('Logout all error:', error);
     res.status(500).json({ error: 'Logout failed' });
   }
 });
 
 // Refresh token
-router.post('/refresh', authenticateToken, async (req, res) => {
+router.post('/refresh', async (req, res) => {
   try {
-    const user = await database.getQuery(
-      'SELECT * FROM users WHERE id = ? AND is_active = 1',
-      [req.user.id]
-    );
+    const { refresh_token } = req.body || {};
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return res.status(500).json({ error: 'Supabase not configured' });
+    if (!refresh_token) return res.status(400).json({ error: 'refresh_token required' });
 
-    if (!user) {
-      return res.status(401).json({ error: 'User not found or inactive' });
-    }
-
-    // Generate new token
-    const newToken = jwt.sign(
-      { userId: user.id, email: user.email, type: user.user_type },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
-    // Update session token
-    const authHeader = req.headers['authorization'];
-    const oldToken = authHeader && authHeader.split(' ')[1];
-    
-    const expiresAt = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)); // 7 days
-    
-    await database.runQuery(
-      'UPDATE user_sessions SET session_token = ?, expires_at = ?, last_used = datetime(\'now\') WHERE session_token = ?',
-      [newToken, expiresAt.toISOString(), oldToken]
-    );
-
-    res.json({
-      message: 'Token refreshed successfully',
-      session: {
-        access_token: newToken,
-        expires_in: process.env.JWT_EXPIRES_IN || '7d'
-      }
+    const resp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token })
     });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json({ error: data?.msg || 'Refresh failed' });
 
+    res.json({ message: 'Token refreshed successfully', session: { access_token: data.access_token, expires_in: String(data.expires_in) } });
   } catch (error) {
     console.error('Refresh token error:', error);
     res.status(500).json({ error: 'Token refresh failed' });
@@ -258,18 +182,9 @@ router.post('/refresh', authenticateToken, async (req, res) => {
 // Get current user sessions
 router.get('/sessions', authenticateToken, async (req, res) => {
   try {
-    const sessions = await database.allQuery(
-      `SELECT id, created_at, last_used, ip_address, user_agent, is_active, 
-              CASE WHEN session_token = ? THEN 1 ELSE 0 END as is_current
-       FROM user_sessions 
-       WHERE user_id = ? AND expires_at > datetime('now')
-       ORDER BY last_used DESC`,
-      [req.headers['authorization']?.split(' ')[1], req.user.id]
-    );
-
-    res.json({ sessions });
+    // With Supabase tokens, we don't track sessions locally; return minimal info
+    res.json({ sessions: [] });
   } catch (error) {
-    console.error('Get sessions error:', error);
     res.status(500).json({ error: 'Failed to get sessions' });
   }
 });

@@ -219,15 +219,15 @@
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const errorDiv = document.getElementById('personalError');
             
-            const formData = new FormData(e.target);
+            const form = e.target;
+            const fields = ['full_name','phone','date_of_birth','gender','emergency_contact'];
             const updateData = {};
-            
-            // Only include changed fields
-            for (let [key, value] of formData.entries()) {
-                if (value.trim() !== '') {
-                    updateData[key] = value;
-                }
-            }
+            fields.forEach(name => {
+                const el = form.elements[name];
+                if (!el) return;
+                const val = (el.value ?? '').trim();
+                updateData[name] = val === '' ? null : val;
+            });
             
             errorDiv.textContent = '';
             Utils.showLoading(submitBtn, 'Salvando...');
@@ -254,15 +254,23 @@
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const errorDiv = document.getElementById('fitnessError');
             
-            const formData = new FormData(e.target);
+            const form = e.target;
+            const fields = ['height_cm','weight_kg','experience_level','fitness_goal','medical_notes'];
             const updateData = {};
-            
-            // Include all fitness-related fields
-            for (let [key, value] of formData.entries()) {
-                if (value.trim() !== '') {
-                    updateData[key] = value;
+            fields.forEach(name => {
+                const el = form.elements[name];
+                if (!el) return;
+                let val = (el.value ?? '').trim();
+                if (val === '') {
+                    updateData[name] = null;
+                } else if (name === 'height_cm') {
+                    updateData[name] = parseInt(val, 10);
+                } else if (name === 'weight_kg') {
+                    updateData[name] = parseFloat(val);
+                } else {
+                    updateData[name] = val;
                 }
-            }
+            });
             
             errorDiv.textContent = '';
             Utils.showLoading(submitBtn, 'Salvando...');

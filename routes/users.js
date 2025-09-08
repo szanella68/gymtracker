@@ -1,50 +1,82 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const { database } = require('../config/database');
 const { authenticateToken, requireAdmin, requireOwnershipOrAdmin } = require('../middleware/auth');
+const { getSupabaseClient } = require('../config/supabase');
+const useSupabase = true; // Supabase-only mode
 
 const router = express.Router();
 
 // Get current user profile
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const user = await database.getQuery(
-      `SELECT u.id, u.email, u.full_name, u.user_type, u.created_at, u.last_login,
-              p.phone, p.date_of_birth, p.gender, p.height_cm, p.weight_kg, 
-              p.fitness_goal, p.experience_level, p.medical_notes, p.emergency_contact,
-              p.profile_picture_url, p.updated_at as profile_updated_at
-       FROM users u
-       LEFT JOIN user_profiles p ON u.id = p.user_id
-       WHERE u.id = ?`,
-      [req.user.id]
-    );
+    if (useSupabase) {
+      const supabaseId = req.user.supabase_id || req.user.id;
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+      const authHeader = req.headers['authorization'] || '';
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      // Fetch profile via REST with user token (RLS)
+      let ensuredProfile = null;
+      try {
+        const sel = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(supabaseId)}&select=*`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': authHeader
+          }
+        });
+        if (sel.ok) {
+          const arr = await sel.json();
+          ensuredProfile = Array.isArray(arr) && arr.length ? arr[0] : null;
+        }
+      } catch {}
+
+      try { console.log(`[Users.me] supabaseId=${supabaseId} email=${req.user.email} user_type(db)=${ensuredProfile?.user_type || 'null'}`); } catch {}
+
+      // Auto-create profile if missing (upsert)
+      if (!ensuredProfile) {
+        try {
+          const resp = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': authHeader,
+              'Content-Type': 'application/json',
+              'Prefer': 'resolution=ignore-duplicates,return=representation'
+            },
+            body: JSON.stringify({ id: supabaseId, email: req.user.email })
+          });
+          if (resp.ok) {
+            const arr = await resp.json();
+            ensuredProfile = Array.isArray(arr) && arr.length ? arr[0] : null;
+          }
+        } catch {}
+      }
+
+      res.json({
+        id: supabaseId,
+        email: req.user.email,
+        profile: {
+          full_name: ensuredProfile?.full_name || req.user.full_name || null,
+          user_type: ensuredProfile?.user_type || 'standard',
+          phone: ensuredProfile?.phone || null,
+          date_of_birth: ensuredProfile?.date_of_birth || null,
+          gender: ensuredProfile?.gender || null,
+          height_cm: ensuredProfile?.height_cm || null,
+          weight_kg: ensuredProfile?.weight_kg || null,
+          fitness_goal: (ensuredProfile?.fitness_goal ?? ensuredProfile?.goals) || null,
+          experience_level: (ensuredProfile?.experience_level ?? ensuredProfile?.fitness_level) || null,
+          medical_notes: (ensuredProfile?.medical_notes ?? ensuredProfile?.injuries_limitations) || null,
+          emergency_contact: ensuredProfile?.emergency_contact || null,
+          profile_picture_url: ensuredProfile?.profile_picture_url || null
+        },
+        created_at: ensuredProfile?.created_at || null,
+        last_login: null,
+        profile_updated_at: ensuredProfile?.updated_at || null
+      });
+      return;
     }
 
-    // Structure response to match expected format
-    res.json({
-      id: user.id,
-      email: user.email,
-      profile: {
-        full_name: user.full_name,
-        user_type: user.user_type,
-        phone: user.phone,
-        date_of_birth: user.date_of_birth,
-        gender: user.gender,
-        height_cm: user.height_cm,
-        weight_kg: user.weight_kg,
-        fitness_goal: user.fitness_goal,
-        experience_level: user.experience_level,
-        medical_notes: user.medical_notes,
-        emergency_contact: user.emergency_contact,
-        profile_picture_url: user.profile_picture_url
-      },
-      created_at: user.created_at,
-      last_login: user.last_login,
-      profile_updated_at: user.profile_updated_at
-    });
+    // No local DB fallback in Supabase-only mode
+    return res.status(500).json({ error: 'Supabase not configured' });
 
   } catch (error) {
     console.error('Get user profile error:', error);
@@ -68,61 +100,75 @@ router.put('/me', authenticateToken, async (req, res) => {
       emergency_contact
     } = req.body;
 
-    // Update user basic info
-    if (full_name) {
-      await database.runQuery(
-        'UPDATE users SET full_name = ?, updated_at = datetime(\'now\') WHERE id = ?',
-        [full_name, req.user.id]
-      );
+    if (useSupabase) {
+      const supabaseId = req.user.supabase_id || req.user.id;
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+      const authHeader = req.headers['authorization'] || '';
+
+      // Optional: update auth metadata full_name
+      if (full_name) {
+        await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+          method: 'PUT',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': authHeader,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ data: { full_name } })
+        }).catch(() => {});
+      }
+
+      // Build upsert payload with only provided fields
+      const payload = { id: supabaseId, email: req.user.email };
+      if (full_name !== undefined) payload.full_name = full_name;
+      if (phone !== undefined) payload.phone = phone;
+      if (date_of_birth !== undefined) payload.date_of_birth = date_of_birth;
+      if (gender !== undefined) payload.gender = gender;
+      if (height_cm !== undefined) payload.height_cm = height_cm;
+      if (weight_kg !== undefined) payload.weight_kg = weight_kg;
+      if (fitness_goal !== undefined) payload.fitness_goal = fitness_goal;
+      if (experience_level !== undefined) payload.experience_level = experience_level;
+      if (medical_notes !== undefined) payload.medical_notes = medical_notes;
+      if (emergency_contact !== undefined) payload.emergency_contact = emergency_contact;
+
+      const resp = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=representation'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => '');
+        console.error('Upsert profile failed:', resp.status, txt);
+        return res.status(500).json({ error: 'Failed to update profile' });
+      }
+      const arr = await resp.json();
+      const up = Array.isArray(arr) && arr.length ? arr[0] : null;
+
+      res.json({ message: 'Profile updated successfully', profile: {
+        full_name: full_name || req.user.full_name,
+        user_type: up?.user_type || 'standard',
+        phone: up?.phone || null,
+        date_of_birth: up?.date_of_birth || null,
+        gender: up?.gender || null,
+        height_cm: up?.height_cm || null,
+        weight_kg: up?.weight_kg || null,
+        fitness_goal: up?.fitness_goal || null,
+        experience_level: up?.experience_level || null,
+        medical_notes: up?.medical_notes || null,
+        emergency_contact: up?.emergency_contact || null,
+        profile_picture_url: up?.profile_picture_url || null,
+      }});
+      return;
     }
 
-    // Update profile info
-    await database.runQuery(
-      `UPDATE user_profiles SET 
-        phone = COALESCE(?, phone),
-        date_of_birth = COALESCE(?, date_of_birth),
-        gender = COALESCE(?, gender),
-        height_cm = COALESCE(?, height_cm),
-        weight_kg = COALESCE(?, weight_kg),
-        fitness_goal = COALESCE(?, fitness_goal),
-        experience_level = COALESCE(?, experience_level),
-        medical_notes = COALESCE(?, medical_notes),
-        emergency_contact = COALESCE(?, emergency_contact),
-        updated_at = datetime('now')
-       WHERE user_id = ?`,
-      [phone, date_of_birth, gender, height_cm, weight_kg, fitness_goal, 
-       experience_level, medical_notes, emergency_contact, req.user.id]
-    );
-
-    // Get updated profile
-    const updatedUser = await database.getQuery(
-      `SELECT u.id, u.email, u.full_name, u.user_type, u.created_at, u.last_login,
-              p.phone, p.date_of_birth, p.gender, p.height_cm, p.weight_kg, 
-              p.fitness_goal, p.experience_level, p.medical_notes, p.emergency_contact,
-              p.profile_picture_url, p.updated_at as profile_updated_at
-       FROM users u
-       LEFT JOIN user_profiles p ON u.id = p.user_id
-       WHERE u.id = ?`,
-      [req.user.id]
-    );
-
-    res.json({
-      message: 'Profile updated successfully',
-      profile: {
-        full_name: updatedUser.full_name,
-        user_type: updatedUser.user_type,
-        phone: updatedUser.phone,
-        date_of_birth: updatedUser.date_of_birth,
-        gender: updatedUser.gender,
-        height_cm: updatedUser.height_cm,
-        weight_kg: updatedUser.weight_kg,
-        fitness_goal: updatedUser.fitness_goal,
-        experience_level: updatedUser.experience_level,
-        medical_notes: updatedUser.medical_notes,
-        emergency_contact: updatedUser.emergency_contact,
-        profile_picture_url: updatedUser.profile_picture_url
-      }
-    });
+    // No local DB fallback in Supabase-only mode
+    return res.status(500).json({ error: 'Supabase not configured' });
 
   } catch (error) {
     console.error('Update profile error:', error);
@@ -147,42 +193,30 @@ router.put('/me/password', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get current password hash
-    const user = await database.getQuery(
-      'SELECT password_hash FROM users WHERE id = ?',
-      [req.user.id]
-    );
+    if (useSupabase) {
+      // Validate current password by performing a password grant
+      const email = req.user.email;
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+      const tryLogin = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        body: JSON.stringify({ email, password: current_password })
+      });
+      if (!tryLogin.ok) return res.status(401).json({ error: 'Current password is incorrect' });
 
-    // Verify current password
-    const isValidPassword = await bcrypt.compare(current_password, user.password_hash);
-    
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Current password is incorrect' });
+      // Update password via Supabase auth/user
+      const authHeader = req.headers['authorization'] || '';
+      const upd = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': authHeader },
+        body: JSON.stringify({ password: new_password })
+      });
+      if (!upd.ok) return res.status(500).json({ error: 'Failed to change password' });
+
+      return res.json({ message: 'Password updated successfully' });
     }
 
-    // Hash new password
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
-    const new_password_hash = await bcrypt.hash(new_password, saltRounds);
-
-    // Update password
-    await database.runQuery(
-      'UPDATE users SET password_hash = ?, updated_at = datetime(\'now\') WHERE id = ?',
-      [new_password_hash, req.user.id]
-    );
-
-    // Optionally invalidate all other sessions for security
-    const authHeader = req.headers['authorization'];
-    const currentToken = authHeader && authHeader.split(' ')[1];
-    
-    await database.runQuery(
-      'UPDATE user_sessions SET is_active = 0 WHERE user_id = ? AND session_token != ? AND is_active = 1',
-      [req.user.id, currentToken]
-    );
-
-    res.json({ 
-      message: 'Password updated successfully',
-      info: 'All other sessions have been logged out for security'
-    });
+    // No local DB fallback in Supabase-only mode
+    return res.status(500).json({ error: 'Supabase not configured' });
 
   } catch (error) {
     console.error('Change password error:', error);
@@ -193,36 +227,19 @@ router.put('/me/password', authenticateToken, async (req, res) => {
 // Get user stats (for dashboard)
 router.get('/me/stats', authenticateToken, async (req, res) => {
   try {
-    // Get basic stats for user dashboard
-    const completedWorkouts = await database.getQuery(
-      'SELECT COUNT(*) as count FROM workout_sessions WHERE user_id = ? AND status = "completed"',
-      [req.user.id]
-    );
+    if (useSupabase) {
+      // Schema non ancora migrato: restituisci 0/placeholder
+      return res.json({
+        completed_workouts: 0,
+        adherence_rate: 0,
+        upcoming_sessions: 0,
+        total_sessions_this_month: 0,
+        completed_this_month: 0
+      });
+    }
 
-    const thisMonthSessions = await database.allQuery(
-      `SELECT status FROM workout_sessions 
-       WHERE user_id = ? AND strftime('%Y-%m', scheduled_date) = strftime('%Y-%m', 'now')`,
-      [req.user.id]
-    );
-
-    const totalThisMonth = thisMonthSessions.length;
-    const completedThisMonth = thisMonthSessions.filter(s => s.status === 'completed').length;
-    const adherenceRate = totalThisMonth > 0 ? Math.round((completedThisMonth / totalThisMonth) * 100) : 0;
-
-    // Get upcoming sessions count
-    const upcomingSessions = await database.getQuery(
-      `SELECT COUNT(*) as count FROM workout_sessions 
-       WHERE user_id = ? AND scheduled_date >= date('now') AND status = 'scheduled'`,
-      [req.user.id]
-    );
-
-    res.json({
-      completed_workouts: completedWorkouts.count,
-      adherence_rate: adherenceRate,
-      upcoming_sessions: upcomingSessions.count,
-      total_sessions_this_month: totalThisMonth,
-      completed_this_month: completedThisMonth
-    });
+    // No local DB fallback in Supabase-only mode
+    return res.json({ completed_workouts: 0, adherence_rate: 0, upcoming_sessions: 0, total_sessions_this_month: 0, completed_this_month: 0 });
 
   } catch (error) {
     console.error('Get user stats error:', error);
@@ -233,47 +250,8 @@ router.get('/me/stats', authenticateToken, async (req, res) => {
 // Admin only: Get all users
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '', user_type = '' } = req.query;
-    const offset = (page - 1) * limit;
-
-    let whereClause = 'WHERE 1=1';
-    let params = [];
-
-    if (search) {
-      whereClause += ' AND (u.email LIKE ? OR u.full_name LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
-    }
-
-    if (user_type) {
-      whereClause += ' AND u.user_type = ?';
-      params.push(user_type);
-    }
-
-    const users = await database.allQuery(
-      `SELECT u.id, u.email, u.full_name, u.user_type, u.created_at, u.last_login, u.is_active,
-              p.phone, p.experience_level, p.fitness_goal
-       FROM users u
-       LEFT JOIN user_profiles p ON u.id = p.user_id
-       ${whereClause}
-       ORDER BY u.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    );
-
-    const totalUsers = await database.getQuery(
-      `SELECT COUNT(*) as count FROM users u ${whereClause}`,
-      params
-    );
-
-    res.json({
-      users,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: totalUsers.count,
-        pages: Math.ceil(totalUsers.count / limit)
-      }
-    });
+    // TODO: implement admin listing via Supabase RPC/view
+    return res.status(501).json({ error: 'Admin listing not implemented for Supabase yet' });
 
   } catch (error) {
     console.error('Get users error:', error);
@@ -284,22 +262,8 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // Admin only: Get user by ID
 router.get('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const user = await database.getQuery(
-      `SELECT u.id, u.email, u.full_name, u.user_type, u.created_at, u.last_login, u.is_active,
-              p.phone, p.date_of_birth, p.gender, p.height_cm, p.weight_kg, 
-              p.fitness_goal, p.experience_level, p.medical_notes, p.emergency_contact,
-              p.profile_picture_url, p.updated_at as profile_updated_at
-       FROM users u
-       LEFT JOIN user_profiles p ON u.id = p.user_id
-       WHERE u.id = ?`,
-      [req.params.id]
-    );
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json(user);
+    // TODO: implement admin get via Supabase
+    return res.status(501).json({ error: 'Admin get not implemented for Supabase yet' });
 
   } catch (error) {
     console.error('Get user error:', error);
@@ -310,32 +274,8 @@ router.get('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Admin only: Update user
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { user_type, is_active, ...profileData } = req.body;
-
-    // Update user basic info
-    if (user_type !== undefined || is_active !== undefined) {
-      await database.runQuery(
-        `UPDATE users SET 
-          user_type = COALESCE(?, user_type),
-          is_active = COALESCE(?, is_active),
-          updated_at = datetime('now')
-         WHERE id = ?`,
-        [user_type, is_active, req.params.id]
-      );
-    }
-
-    // Update profile if provided
-    if (Object.keys(profileData).length > 0) {
-      const fields = Object.keys(profileData).map(key => `${key} = ?`).join(', ');
-      const values = Object.values(profileData);
-      
-      await database.runQuery(
-        `UPDATE user_profiles SET ${fields}, updated_at = datetime('now') WHERE user_id = ?`,
-        [...values, req.params.id]
-      );
-    }
-
-    res.json({ message: 'User updated successfully' });
+    // TODO: implement admin update via Supabase
+    return res.status(501).json({ error: 'Admin update not implemented for Supabase yet' });
 
   } catch (error) {
     console.error('Update user error:', error);

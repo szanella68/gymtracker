@@ -3,17 +3,37 @@ setlocal EnableExtensions
 
 rem === PERCORSO GYMTRACKER ===
 set "GYMTRACKER_DIR=C:\filepubblici\gymtracker"
-set "GYMTRACKER_PORT=3007"
+set "GYMTRACKER_PORT=3010"
 
 cd /d "%GYMTRACKER_DIR%"
 
-where node
+where node >nul 2>&1
 if errorlevel 1 (
   echo [ERRORE] Node.js non nel PATH.
   goto HOLD
 )
 
-rem evita doppio avvio: se 3007 gia' in LISTENING non rilancia
+rem assicurati che npm sia disponibile
+where npm >nul 2>&1
+if errorlevel 1 (
+  echo [ERRORE] npm non nel PATH.
+  goto HOLD
+)
+
+rem installa dipendenze se mancano
+if not exist "node_modules" (
+  echo [NPM] Installazione dipendenze iniziale...
+  call npm install
+) else (
+  echo [NPM] Verifica pacchetti chiave...
+  call npm ls @supabase/supabase-js >nul 2>&1
+  if errorlevel 1 (
+    echo [NPM] Installo dipendenze mancanti (@supabase/supabase-js, pg)
+    call npm install @supabase/supabase-js pg
+  )
+)
+
+rem evita doppio avvio: se 3010 gia' in LISTENING non rilancia
 netstat -ano | findstr /r /c:":%GYMTRACKER_PORT% .*LISTENING" >nul
 if not errorlevel 1 (
   echo [GymTracker] gia' attivo su :%GYMTRACKER_PORT%. Niente rilancio.

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymTracker • Auth Callback</title>
+  <base href="/gymtracker/">
+  <link rel="stylesheet" href="shared/css/shared.css">
+  <style>
+    .centered {
+      min-height: 80vh; display: flex; align-items: center; justify-content: center; text-align: center;
+      padding: 2rem; color: #0f172a;
+    }
+    .card { max-width: 520px; }
+  </style>
+  <script src="shared/js/core/api.js"></script>
+  <script>
+    function parseParams(str) {
+      const out = {};
+      if (!str) return out;
+      str.replace(/^[#?]/, '')
+         .split('&')
+         .filter(Boolean)
+         .forEach(kv => {
+           const [k, v] = kv.split('=');
+           out[decodeURIComponent(k)] = decodeURIComponent(v || '');
+         });
+      return out;
+    }
+
+    function storeIfSupabaseTokens(params) {
+      const keys = ['access_token','refresh_token','expires_in','token_type','provider_token','type'];
+      let stored = false;
+      keys.forEach(k => {
+        if (params[k] !== undefined) {
+          localStorage.setItem('supabase_' + k, params[k]);
+          stored = true;
+        }
+      });
+      return stored;
+    }
+
+    async function handleRedirect() {
+      const hashParams = parseParams(location.hash);
+      const queryParams = parseParams(location.search);
+
+      // Prefer hash (Supabase), fall back to query
+      const p = Object.keys(hashParams).length ? hashParams : queryParams;
+
+      const isSupabase = storeIfSupabaseTokens(p);
+      if (isSupabase && p.access_token && window.GymAPI) {
+        try { GymAPI.setToken(p.access_token); } catch {}
+      }
+
+      // Optional: honor ?redirect=/path
+      const explicitRedirect = p.redirect ? decodeURIComponent(p.redirect) : null;
+
+      // If coming from signup, portiamo l'utente al profilo per completare i dati
+      if (p.type === 'signup') {
+        window.location.replace('/gymtracker/utente/profilo.html');
+        return;
+      }
+
+      // Se abbiamo un redirect esplicito, usalo
+      if (explicitRedirect && explicitRedirect.startsWith('/gymtracker/')) {
+        window.location.replace(explicitRedirect);
+        return;
+      }
+
+      // Se l'utente è loggato sul backend locale, vai alla dashboard
+      try {
+        if (window.GymAPI && GymAPI.isAuthenticated()) {
+          window.location.replace('/gymtracker/utente/dashboard.html');
+          return;
+        }
+      } catch {}
+
+      // Default: torna alla pagina di login/registrazione
+      window.location.replace('/gymtracker/utente/');
+    }
+
+    document.addEventListener('DOMContentLoaded', handleRedirect);
+  </script>
+</head>
+<body>
+  <div data-include="shared/partials/header_public.html"></div>
+  <main class="centered">
+    <div class="card">
+      <div class="card-header"><h3>Autenticazione in corso...</h3></div>
+      <p>Stiamo completando l'accesso. Attendi qualche istante.</p>
+    </div>
+  </main>
+  <div data-include="shared/partials/footer.html"></div>
+  <script src="shared/js/include.js"></script>
+</body>
+</html>
