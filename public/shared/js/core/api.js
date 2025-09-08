@@ -1,8 +1,10 @@
 // GymTracker API Client
 class GymAPI {
   static baseURL = (() => {
-    const p = window.location.pathname || '';
-    const prefix = p.startsWith('/gymtracker') ? '/gymtracker/api' : '/api';
+    const isLocal = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+    // Locale: il backend espone /api direttamente
+    // Proxy (zanserver): le API sono sotto /gymtracker/api
+    const prefix = isLocal ? '/api' : '/gymtracker/api';
     return window.location.origin + prefix;
   })();
   

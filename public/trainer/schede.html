@@ -34,30 +34,41 @@
         <button class="btn-secondary" onclick="window.location.href='trainer/dashboard.html'">← Torna alla Dashboard</button>
       </div>
     </div>
-    <div class="layout">
-      <aside class="sidebar">
-        <div class="flex-between mb-2">
-          <strong>Clienti</strong>
-          <select id="filterActive" class="filter-select" onchange="loadClients()">
-            <option value="all">Tutti</option>
-            <option value="true">Attivi</option>
-            <option value="false">Disattivati</option>
-          </select>
-        </div>
-        <div id="clientsList"></div>
-      </aside>
-      <section class="plans">
-        <div class="flex-between mb-2">
-          <strong id="currentClientName">Seleziona un cliente</strong>
-          <button class="plus" onclick="createPlan()">+ Nuova scheda</button>
-        </div>
-        <div class="flex" style="gap: 16px;">
-          <div style="width: 280px;">
-            <div id="plansList"></div>
+    <div class="layout" style="grid-template-columns: 1fr;">
+      <section class="plans" style="grid-column: 1 / -1;">
+        <!-- Riga superiore: a sinistra combo clienti (con filtro), a destra elenco schede -->
+        <div class="flex" style="gap:16px; align-items:flex-start;">
+          <div style="width:320px;">
+            <div class="flex-between mb-2">
+              <strong>Clienti</strong>
+              <select id="filterActive" class="filter-select" onchange="loadClients()">
+                <option value="all">Tutti</option>
+                <option value="true" selected>Attivi</option>
+                <option value="false">Disattivati</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Seleziona cliente</label>
+              <select id="clientSelect" class="filter-select" onchange="onClientChange()">
+                <option value="">-- Seleziona --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label style="display:block;">Stato cliente</label>
+              <label style="font-size:12px; color:#64748b; margin-right:6px;">attivo</label>
+              <input type="checkbox" id="clientActiveToggle" onchange="onClientActiveToggleChange(this.checked)" />
+            </div>
+            <button class="plus" onclick="createPlan()">+ Nuova scheda</button>
           </div>
           <div style="flex:1;">
-            <div id="planDetail"></div>
+            <div><strong>Schede cliente</strong></div>
+            <div id="plansList" class="mt-1"></div>
           </div>
+        </div>
+
+        <!-- Riga inferiore: dettaglio scheda a tutta larghezza -->
+        <div class="mt-2" style="margin-top:16px;">
+          <div id="planDetail"></div>
         </div>
       </section>
     </div>
@@ -73,36 +84,78 @@
     let currentClient = null;
     let currentPlans = [];
     let currentPlan = null;
+    let clientsData = [];
 
     async function loadClients() {
       const active = document.getElementById('filterActive').value;
       const t = GymAPI.getToken();
       const r = await fetch(`${GymAPI.baseURL}/trainer/clients?active=${active}`, { headers: { Authorization: 'Bearer ' + t }});
       const { clients } = await r.json();
-      const box = document.getElementById('clientsList');
-      box.innerHTML = '';
-      clients.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'client-item';
+      clientsData = clients || [];
+      const sel = document.getElementById('clientSelect');
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">-- Seleziona --</option>';
+      clientsData.forEach(c => {
         const label = c.full_name ? `${c.full_name} (${c.email})` : (c.email || 'Senza nome');
-        div.innerHTML = `<span>${label}</span>
-          <span>
-            <label style=\"font-size:12px; color:#64748b; margin-right:6px;\">attivo</label>
-            <input type=\"checkbox\" ${c.utente_attivo?'checked':''}
-              onclick=\"event.stopPropagation(); toggleClientActive('${c.id}', this.checked, this)\"/>
-          </span>`;
-        div.onclick = () => selectClient(c, div);
-        box.appendChild(div);
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = label;
+        sel.appendChild(opt);
       });
+      // Mantieni selezione precedente se ancora presente, altrimenti seleziona il primo
+      if (prev && clientsData.some(c => c.id === prev)) {
+        sel.value = prev;
+      } else if (clientsData.length) {
+        sel.value = clientsData[0].id;
+      }
+      onClientChange();
     }
 
-    async function selectClient(c, el) {
-      currentClient = c;
-      document.querySelectorAll('#clientsList .client-item').forEach(i => i.classList.remove('active'));
-      if (el) el.classList.add('active');
-      const label = c.full_name ? `${c.full_name} (${c.email})` : (c.email || 'Senza nome');
-      document.getElementById('currentClientName').textContent = label;
-      await loadPlans();
+    function onClientChange() {
+      const sel = document.getElementById('clientSelect');
+      const id = sel.value;
+      currentClient = clientsData.find(c => c.id === id) || null;
+      // Aggiorna toggle stato cliente
+      const toggle = document.getElementById('clientActiveToggle');
+      if (currentClient) {
+        toggle.disabled = false;
+        toggle.checked = !!currentClient.utente_attivo;
+      } else {
+        toggle.checked = false;
+        toggle.disabled = true;
+      }
+      loadPlans();
+    }
+
+    async function onClientActiveToggleChange(checked) {
+      if (!currentClient) return;
+      const id = currentClient.id;
+      const t = GymAPI.getToken();
+      const sel = document.getElementById('clientSelect');
+      try {
+        const r = await fetch(`${GymAPI.baseURL}/trainer/clients/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type':'application/json', Authorization:'Bearer '+t },
+          body: JSON.stringify({ utente_attivo: !!checked })
+        });
+        if (!r.ok) throw new Error('update failed');
+        // ricarica elenco clienti preservando selezione (potrebbe sparire se filtrato)
+        const keepId = id;
+        await loadClients();
+        // se il client non è più nel filtro, la select cadrà su altro ID
+        const after = document.getElementById('clientSelect').value;
+        if (after !== keepId) {
+          // Se è sparito per via del filtro, azzera piani e dettagli
+          currentPlan = null;
+          currentPlans = [];
+          document.getElementById('plansList').innerHTML = '';
+          document.getElementById('planDetail').innerHTML = '';
+        }
+      } catch (e) {
+        alert('Aggiornamento stato cliente fallito');
+        // ripristina toggle
+        document.getElementById('clientActiveToggle').checked = !!(currentClient && currentClient.utente_attivo);
+      }
     }
 
     async function loadPlans() {
@@ -119,7 +172,7 @@
         d.innerHTML = `<span>${p.titolo || '(Senza titolo)'}</span>
           <span style=\"float:right\"> <label style=\"font-size:12px; color:#64748b; margin-right:6px;\">attiva</label>
             <input type=\"checkbox\" ${p.attiva!==false?'checked':''}
-              onclick=\"event.stopPropagation(); togglePlanActive('${p.id}', this.checked)\"/>
+              onclick=\"event.stopPropagation(); togglePlanActive('${p.id}', this.checked, this)\"/>
           </span>`;
         d.onclick = () => openPlan(p, d);
         box.appendChild(d);
@@ -137,16 +190,19 @@
       const { plan, sessions, exercises } = await r.json();
       const box = document.getElementById('planDetail');
       let html = '';
-      html += `<div class="card"><div class="card-header"><h3>Intestazione scheda</h3></div>`;
+      html += `<div class="card"><div class="card-header"><h3>Dettagli scheda</h3></div>`;
       html += `<div class="form-group"><label>Titolo</label><input id="planTitle" type="text" value="${plan.titolo || ''}"></div>`;
       html += `<div class="form-group"><label>Descrizione</label><textarea id="planDesc">${plan.descrizione || ''}</textarea></div>`;
-      html += `<div class="form-group"><label><input id="planActive" type="checkbox" ${plan.attiva!==false?'checked':''}> Attiva</label></div>`;
+      html += `<div class="flex" style="gap:12px;">
+                 <div class="form-group" style="flex:1"><label>Autore</label><input id="planAuthor" type="text" value="${plan.autore || ''}"></div>
+                 <div class="form-group" style="width:180px"><label>Durata (settimane)</label><input id="planWeeks" type="number" min="1" max="52" value="${plan.durata_settimane || ''}"></div>
+                 <div class="form-group" style="width:220px"><label>Sessioni/settimana</label><input id="planSpw" type="number" min="1" max="14" value="${plan.sessioni_settimana || ''}"></div>
+               </div>`;
       html += `<button class="btn-primary" onclick="savePlan('${plan.id}')">Salva scheda</button>`;
       html += `<div class="flex-between" style="margin:10px 0;"><strong>SESSIONI</strong><button class="plus" onclick="createSession()">+ Aggiungi sessione</button></div>`;
-      sessions.sort((a,b)=>(a.ordine||0)-(b.ordine||0)).forEach(s => {
+      sessions.forEach(s => {
         html += `<div class="session">`;
         html += `<div class="form-group"><label>Nome sessione</label><input type="text" id="sess_${s.id}_name" value="${s.nome}"/></div>`;
-        html += `<div class="form-group"><label>Ordine</label><input type="number" id="sess_${s.id}_ord" value="${s.ordine||1}"/></div>`;
         html += `<div class="flex-between">`;
         html += `<div><button class="btn btn-sm" onclick="saveSession('${s.id}')">Salva sessione</button> <button class="plus" onclick="createExercise('${s.id}')">+ Esercizio</button></div>`;
         html += `<button class="btn btn-sm" onclick="deleteSession('${s.id}')">Elimina sessione</button>`;
@@ -155,11 +211,13 @@
         if (!list.length) html += `<div style="color:#64748b;">Nessun esercizio</div>`;
         list.forEach(e => {
           html += `<div class="exercise">`;
-          html += `<input style="width:30%" id="ex_${e.id}_name" value="${e.name}"/>`;
+          html += `<input style="width:28%" id="ex_${e.id}_name" value="${e.name}"/>`;
           html += ` S:<input style="width:50px" id="ex_${e.id}_sets" type="number" value="${e.sets_count||3}"/>`;
           html += ` Rip:<input style="width:50px" id="ex_${e.id}_rmin" type="number" value="${e.reps_min||8}"/>-<input style="width:50px" id="ex_${e.id}_rmax" type="number" value="${e.reps_max||12}"/>`;
           html += ` Kg:<input style="width:70px" id="ex_${e.id}_kg" type="number" step="0.1" value="${e.weight_suggested||0}"/>`;
           html += ` Rest:<input style="width:60px" id="ex_${e.id}_rest" type="number" value="${e.rest_seconds||90}"/>`;
+          html += ` Int:<select id="ex_${e.id}_int" style="width:70px">${Array.from({length:11},(_,i)=>`<option value="${i}" ${e.intensity==i?'selected':''}>${i}</option>`).join('')}</select>`;
+          html += ` URL:<input style="width:18%" id="ex_${e.id}_url" type="url" placeholder="https://..." value="${e.external_url||''}"/>`;
           html += ` <button class="btn btn-sm" onclick="saveExercise('${e.id}')">Salva</button>`;
           html += ` <button class="btn btn-sm" onclick="deleteExercise('${e.id}')">🗑</button>`;
           html += `</div>`;
@@ -175,7 +233,9 @@
       const payload = {
         titolo: document.getElementById('planTitle').value,
         descrizione: document.getElementById('planDesc').value,
-        attiva: document.getElementById('planActive').checked
+        autore: document.getElementById('planAuthor').value || null,
+        durata_settimane: (()=>{ const v=document.getElementById('planWeeks').value; return v===''? null : parseInt(v,10); })(),
+        sessioni_settimana: (()=>{ const v=document.getElementById('planSpw').value; return v===''? null : parseInt(v,10); })()
       };
       const t = GymAPI.getToken();
       const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });
@@ -187,51 +247,48 @@
       openPlan(currentPlan, el);
     }
 
-    async function toggleClientActive(id, checked, el) {
-      const prev = checked;
-      if (el) el.disabled = true;
-      try {
-        const t = GymAPI.getToken();
-        const r = await fetch(`${GymAPI.baseURL}/trainer/clients/${encodeURIComponent(id)}`, {
-          method: 'PUT', headers: { 'Content-Type':'application/json', Authorization:'Bearer '+t },
-          body: JSON.stringify({ utente_attivo: !!checked })
-        });
-        if (!r.ok) throw new Error('Update failed');
-        // Refresh list according to current filter
-        await loadClients();
-        // Clear selection if filtered out
-        currentClient = null;
-        document.getElementById('currentClientName').textContent = 'Seleziona un cliente';
-        document.getElementById('plansList').innerHTML = '';
-        document.getElementById('planDetail').innerHTML = '';
-      } catch (e) {
-        alert('Aggiornamento attivo/disattivo fallito');
-        if (el) el.checked = !prev;
-      } finally {
-        if (el) el.disabled = false;
-      }
-    }
+    // toggleClientActive non più usato: gestione client solo via combo e filtro
 
-    async function togglePlanActive(id, checked) {
+    async function togglePlanActive(id, checked, el) {
       try {
         const t = GymAPI.getToken();
-        const r = await fetch(`/api/trainer/plans/${encodeURIComponent(id)}`, {
-          method: 'PUT', headers: { 'Content-Type':'application/json', Authorization:'Bearer '+t },
-          body: JSON.stringify({ attiva: !!checked })
-        });
-        if (!r.ok) throw new Error('Update failed');
+        if (checked) {
+          // Consenti selezione solo se non esistono altre schede attive
+          const otherActive = (currentPlans || []).some(p => p.id !== id && p.attiva !== false);
+          if (otherActive) {
+            alert("Disattiva le altre schede prima di selezionarne un'altra.");
+            if (el) el.checked = false; // non lasciare spuntare una nuova scheda
+            return;
+          }
+          // Attiva solo questa scheda senza auto-disattivare le altre lato client
+          const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(id)}`, {
+            method: 'PUT', headers: { 'Content-Type':'application/json', Authorization:'Bearer '+t },
+            body: JSON.stringify({ attiva: true })
+          });
+          if (!r.ok) throw new Error('Activate failed');
+          await loadPlans();
+        } else {
+          // Consenti disattivazione esplicita
+          const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(id)}`, {
+            method: 'PUT', headers: { 'Content-Type':'application/json', Authorization:'Bearer '+t },
+            body: JSON.stringify({ attiva: false })
+          });
+          if (!r.ok) throw new Error('Update failed');
+          await loadPlans();
+        }
       } catch (e) {
         alert('Aggiornamento stato scheda fallito');
+        // Ripristina stato precedente in caso di errore
+        if (el) el.checked = !checked;
       }
     }
 
     async function saveSession(id) {
       const payload = {
-        nome: document.getElementById(`sess_${id}_name`).value,
-        ordine: parseInt(document.getElementById(`sess_${id}_ord`).value||'1',10)
+        nome: document.getElementById(`sess_${id}_name`).value
       };
       const t = GymAPI.getToken();
-      const r = await fetch(`/api/trainer/sessions/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });
+      const r = await fetch(`${GymAPI.baseURL}/trainer/sessions/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });
       if (!r.ok) return alert('Salvataggio sessione fallito');
       openPlan(currentPlan);
     }
@@ -243,10 +300,12 @@
         reps_min: parseInt(document.getElementById(`ex_${id}_rmin`).value||'8',10),
         reps_max: parseInt(document.getElementById(`ex_${id}_rmax`).value||'12',10),
         weight_suggested: parseFloat(document.getElementById(`ex_${id}_kg`).value||'0'),
-        rest_seconds: parseInt(document.getElementById(`ex_${id}_rest`).value||'90',10)
+        rest_seconds: parseInt(document.getElementById(`ex_${id}_rest`).value||'90',10),
+        intensity: parseInt(document.getElementById(`ex_${id}_int`).value||'0',10),
+        external_url: (document.getElementById(`ex_${id}_url`).value||'').trim() || null
       };
       const t = GymAPI.getToken();
-      const r = await fetch(`/api/trainer/exercises/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });
+      const r = await fetch(`${GymAPI.baseURL}/trainer/exercises/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });
       if (!r.ok) return alert('Salvataggio esercizio fallito');
       openPlan(currentPlan);
     }
@@ -257,7 +316,7 @@
       if (titolo === null) return;
       const descrizione = prompt('Descrizione (facoltativa)') || null;
       const t = GymAPI.getToken();
-      const r = await fetch('/api/trainer/plans', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ user_id: currentClient.id, titolo, descrizione })});
+      const r = await fetch(`${GymAPI.baseURL}/trainer/plans`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ user_id: currentClient.id, titolo, descrizione })});
       if (!r.ok) return alert('Creazione fallita');
       await loadPlans();
     }
@@ -266,7 +325,7 @@
       if (!currentPlan) return;
       if (!confirm('Eliminare questa scheda?')) return;
       const t = GymAPI.getToken();
-      const r = await fetch(`/api/trainer/plans/${encodeURIComponent(currentPlan.id)}`, { method:'DELETE', headers:{ Authorization:'Bearer '+t }});
+      const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(currentPlan.id)}`, { method:'DELETE', headers:{ Authorization:'Bearer '+t }});
       if (!r.ok) return alert('Eliminazione fallita');
       currentPlan = null;
       await loadPlans();
@@ -277,7 +336,7 @@
       const nome = prompt('Nome sessione?');
       if (nome === null) return;
       const t = GymAPI.getToken();
-      const r = await fetch('/api/trainer/sessions', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ scheda_id: currentPlan.id, nome })});
+      const r = await fetch(`${GymAPI.baseURL}/trainer/sessions`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ scheda_id: currentPlan.id, nome })});
       if (!r.ok) return alert('Creazione sessione fallita');
       openPlan(currentPlan);
     }
@@ -285,7 +344,7 @@
     async function deleteSession(id) {
       if (!confirm('Eliminare la sessione?')) return;
       const t = GymAPI.getToken();
-      const r = await fetch(`/api/trainer/sessions/${encodeURIComponent(id)}`, { method:'DELETE', headers:{ Authorization:'Bearer '+t }});
+      const r = await fetch(`${GymAPI.baseURL}/trainer/sessions/${encodeURIComponent(id)}`, { method:'DELETE', headers:{ Authorization:'Bearer '+t }});
       if (!r.ok) return alert('Eliminazione sessione fallita');
       openPlan(currentPlan);
     }
@@ -294,7 +353,7 @@
       const name = prompt('Nome esercizio?');
       if (name === null) return;
       const t = GymAPI.getToken();
-      const r = await fetch('/api/trainer/exercises', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ sessione_id: sessionId, name })});
+      const r = await fetch(`${GymAPI.baseURL}/trainer/exercises`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ sessione_id: sessionId, name })});
       if (!r.ok) return alert('Creazione esercizio fallita');
       openPlan(currentPlan);
     }
@@ -302,7 +361,7 @@
     async function deleteExercise(id) {
       if (!confirm('Eliminare esercizio?')) return;
       const t = GymAPI.getToken();
-      const r = await fetch(`/api/trainer/exercises/${encodeURIComponent(id)}`, { method:'DELETE', headers:{ Authorization:'Bearer '+t }});
+      const r = await fetch(`${GymAPI.baseURL}/trainer/exercises/${encodeURIComponent(id)}`, { method:'DELETE', headers:{ Authorization:'Bearer '+t }});
       if (!r.ok) return alert('Eliminazione esercizio fallita');
       openPlan(currentPlan);
     }

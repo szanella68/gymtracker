@@ -214,24 +214,24 @@
         
         async function loadTrainerStats() {
             try {
-                // For now, use mock data - replace with real API calls when available
-                // const stats = await GymAPI.get('/trainer/stats');
-                
-                const mockStats = {
-                    totalClients: 24,
-                    activePrograms: 18,
-                    avgAdherence: 78
-                };
-                
-                document.getElementById('totalClients').textContent = mockStats.totalClients;
-                document.getElementById('activePrograms').textContent = mockStats.activePrograms;
-                document.getElementById('avgAdherence').textContent = mockStats.avgAdherence + '%';
-                
+                // Active clients: real count via API
+                const token = GymAPI.getToken();
+                const res = await fetch(`${GymAPI.baseURL}/trainer/clients?active=true`, {
+                    headers: { Authorization: 'Bearer ' + token }
+                });
+                const data = await res.json();
+                const clients = Array.isArray(data.clients) ? data.clients : [];
+                document.getElementById('totalClients').textContent = clients.length;
+
+                // Keep placeholders for other stats for now
+                // TODO: replace with real endpoints when available
+                document.getElementById('activePrograms').textContent = '--';
+                document.getElementById('avgAdherence').textContent = '--';
             } catch (error) {
                 console.error('Error loading trainer stats:', error);
                 document.getElementById('totalClients').textContent = '0';
-                document.getElementById('activePrograms').textContent = '0';
-                document.getElementById('avgAdherence').textContent = '0%';
+                document.getElementById('activePrograms').textContent = '--';
+                document.getElementById('avgAdherence').textContent = '--';
             }
         }
         

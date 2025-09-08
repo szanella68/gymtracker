@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymTracker - Pianificazione Calendario</title>
+  <base href="/gymtracker/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='12' width='48' height='44' rx='6' ry='6' fill='%23ffffff' stroke='%23667eea' stroke-width='4'/%3E%3Crect x='8' y='20' width='48' height='8' fill='%23667eea'/%3E%3Ccircle cx='20' cy='36' r='3' fill='%23667eea'/%3E%3Ccircle cx='32' cy='36' r='3' fill='%23667eea'/%3E%3Ccircle cx='44' cy='36' r='3' fill='%23667eea'/%3E%3Ccircle cx='20' cy='48' r='3' fill='%23667eea'/%3E%3Ccircle cx='32' cy='48' r='3' fill='%23667eea'/%3E%3Ccircle cx='44' cy='48' r='3' fill='%23667eea'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="shared/css/shared.css">
+  <link rel="stylesheet" href="trainer/css/trainer.css">
+  <style>
+    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+    .sidebar { background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.08); min-height: 500px; }
+    .calendar-wrap { background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+    .sidebar .empty { color: #64748b; text-align: center; padding: 16px; }
+    .session-item { border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; margin-bottom: 8px; background:#f8fafc; cursor: grab; }
+    .session-item:active { cursor: grabbing; }
+    .exercise-item { padding: 4px 8px; border-left: 3px solid #e2e8f0; margin: 4px 0; color: #334155; font-size: 13px; }
+    .calendar-toolbar { display:flex; justify-content: space-between; align-items:center; gap: 8px; margin-bottom: 8px; }
+    .calendar-nav { display:flex; gap: 8px; align-items:center; }
+    .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .day-header { text-align:center; font-weight:600; color:#475569; padding: 6px 0; }
+    .day-cell { border:1px solid #e2e8f0; border-radius: 8px; min-height: 90px; padding: 6px; position: relative; background:#fff; cursor: default; }
+    .day-cell.other-month { background: #fafafa; color:#94a3b8; }
+    .day-cell.today { outline: 2px solid #6366f1; }
+    .day-cell.selected { box-shadow: inset 0 0 0 2px #0ea5e9; }
+    .day-number { position:absolute; top:6px; right:8px; font-size: 12px; color:#64748b; }
+    .day-events { display: flex; flex-direction: column; gap: 4px; margin-top: 16px; }
+    .event-pill { background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; padding: 3px 6px; border-radius: 999px; font-size: 12px; display:inline-flex; align-items:center; gap:6px; }
+    .event-pill .del { cursor:pointer; color:#ef4444; }
+    .day-cell.drag-over { box-shadow: inset 0 0 0 2px #10b981; }
+    .controls { display:flex; gap: 8px; align-items:center; }
+    .filter-select { width: 100%; }
+  </style>
+</head>
+<body>
+  <div data-include="shared/partials/header.html"></div>
+  <main class="trainer-dashboard">
+    <div class="dashboard-header">
+      <h1>📅 Pianificazione Calendario</h1>
+      <div class="trainer-actions">
+        <button class="btn-secondary" onclick="window.location.href='trainer/dashboard.html'">← Torna alla Dashboard</button>
+        <button onclick="logout()" class="btn-logout">Esci</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="flex-between mb-2">
+          <strong>Clienti</strong>
+          <select id="filterActive" class="filter-select" style="width:140px" onchange="loadClients()">
+            <option value="all">Tutti</option>
+            <option value="true" selected>Attivi</option>
+            <option value="false">Disattivati</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Seleziona cliente</label>
+          <select id="clientSelect" class="filter-select" onchange="onClientChange()">
+            <option value="">-- Seleziona --</option>
+          </select>
+        </div>
+        <div id="activePlanBox" class="mt-1">
+          <div class="empty">Seleziona un cliente per vedere la scheda attiva</div>
+        </div>
+      </aside>
+
+      <section class="calendar-wrap">
+        <div class="calendar-toolbar">
+          <div class="calendar-nav">
+            <button class="btn-secondary" title="Mese precedente" aria-label="Mese precedente" onclick="changeMonth(-1)">◀</button>
+            <div id="currentMonth" class="calendar-month" style="min-width:180px; text-align:center; font-weight:600;">Caricamento...</div>
+            <button class="btn-secondary" title="Mese successivo" aria-label="Mese successivo" onclick="changeMonth(1)">▶</button>
+            <button class="btn-secondary" title="Vai a oggi" onclick="goToToday()">Oggi</button>
+          </div>
+          <div class="controls">
+            <label for="weeksInput" style="font-size: 12px; color:#64748b;">Estendi settimana:</label>
+            <input id="weeksInput" type="number" min="1" max="52" value="1" style="width: 70px;">
+            <button class="btn-primary" onclick="extendCurrentWeek()">Estendi</button>
+            <button class="btn-logout" title="Elimina tutte le occorrenze dalla data selezionata in avanti" onclick="deleteFromSelected()">Elimina da data selezionata</button>
+          </div>
+        </div>
+
+        <div class="month-grid" id="calendarGrid"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="shared/js/core/api.js"></script>
+  <script src="shared/js/include.js"></script>
+  <script src="shared/js/core/utils.js"></script>
+  <script>
+    // Auth + role check (trainer/admin)
+    async function checkTrainerAccess() {
+      const token = GymAPI.getToken();
+      if (!token) {
+        window.location.href = '/gymtracker/utente/';
+        return false;
+      }
+      try {
+        const me = await GymAPI.get('/users/me');
+        if (me.profile?.user_type !== 'admin') {
+          alert('Accesso riservato ai trainer');
+          window.location.href = '/gymtracker/utente/dashboard.html';
+          return false;
+        }
+        return true;
+      } catch (e) {
+        GymAPI.removeToken();
+        window.location.href = '/gymtracker/utente/';
+        return false;
+      }
+    }
+
+    const monthNames = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+    let currentDate = new Date();
+    let selectedClient = null; // { id, ... }
+    let currentPlan = null; // { id, durata_settimane, ... }
+    let planSessions = []; // sessions array
+    let planExercises = {}; // sessionId -> [exercises]
+    let scheduledItems = []; // items from backend for visible range
+    let draggedSessionId = null;
+    let selectedDate = null; // used for highlighting and week extension
+
+    // Clients loading
+    async function loadClients() {
+      const active = document.getElementById('filterActive').value;
+      const t = GymAPI.getToken();
+      const r = await fetch(`${GymAPI.baseURL}/trainer/clients?active=${active}`, { headers: { Authorization: 'Bearer ' + t }});
+      const data = await r.json();
+      const clients = data.clients || [];
+      const sel = document.getElementById('clientSelect');
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">-- Seleziona --</option>';
+      clients.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.full_name ? `${c.full_name} (${c.email})` : (c.email || 'Senza nome');
+        sel.appendChild(opt);
+      });
+      if (prev && clients.some(c => c.id === prev)) sel.value = prev;
+      if (!sel.value && clients.length) sel.value = clients[0].id;
+      if (sel.value) onClientChange();
+    }
+
+    async function onClientChange() {
+      const id = document.getElementById('clientSelect').value;
+      if (!id) {
+        selectedClient = null;
+        document.getElementById('activePlanBox').innerHTML = '<div class="empty">Seleziona un cliente per vedere la scheda attiva</div>';
+        renderCalendar();
+        return;
+      }
+      selectedClient = { id };
+      await loadActivePlanAndSessions();
+      await loadScheduleForMonth();
+      renderCalendar();
+    }
+
+    async function loadActivePlanAndSessions() {
+      currentPlan = null; planSessions = []; planExercises = {};
+      const box = document.getElementById('activePlanBox');
+      box.innerHTML = '<div class="empty">Caricamento scheda attiva...</div>';
+      try {
+        const t = GymAPI.getToken();
+        const url = `${GymAPI.baseURL}/trainer/active-plan?user_id=${encodeURIComponent(selectedClient.id)}`;
+        const r = await fetch(url, { headers: { Authorization: 'Bearer ' + t }});
+        if (r.status === 404) {
+          box.innerHTML = '<div class="empty">Nessuna scheda attiva</div>';
+          return;
+        }
+        const { plan, sessions } = await r.json();
+        currentPlan = plan;
+        planSessions = sessions || [];
+        // Render sessions + nested exercises (simplified: show count badge; we can fetch details via /plans/:id if needed)
+        await renderActivePlanBox();
+        // Suggest weeks input from plan
+        const w = document.getElementById('weeksInput');
+        if (plan?.durata_settimane) w.value = plan.durata_settimane;
+      } catch (e) {
+        box.innerHTML = '<div class="empty">Errore nel caricamento della scheda</div>';
+      }
+    }
+
+    async function renderActivePlanBox() {
+      const box = document.getElementById('activePlanBox');
+      if (!currentPlan) { box.innerHTML = '<div class="empty">Nessuna scheda attiva</div>'; return; }
+      // For detailed exercises, fetch /plans/:id once
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(currentPlan.id)}`, { headers: { Authorization: 'Bearer ' + t }});
+        const { sessions, exercises } = await r.json();
+        planSessions = sessions || [];
+        planExercises = {};
+        (exercises || []).forEach(ex => {
+          (planExercises[ex.sessione_id] ||= []).push(ex);
+        });
+      } catch {}
+
+      let html = '';
+      html += `<div class="card" style="box-shadow:none; border:1px solid #e2e8f0;">
+                 <div class="card-header"><h3>${currentPlan.titolo || 'Scheda attiva'}</h3></div>
+                 <div>`;
+      if (!planSessions.length) {
+        html += '<div class="empty">La scheda non ha sessioni</div>';
+      } else {
+        html += planSessions.map(s => {
+          const exs = planExercises[s.id] || [];
+          return `
+            <div class="session-item" draggable="true" data-session-id="${s.id}">
+              <div style="font-weight:600;">${Utils.escapeHtml(s.nome || 'Sessione')}</div>
+              <div style="font-size:12px; color:#64748b;">${exs.length} esercizi</div>
+              ${exs.length ? exs.map(e => `<div class=\"exercise-item\">• ${Utils.escapeHtml(e.name || '')}${e.sets_count?` — ${e.sets_count}x${e.reps_min||''}-${e.reps_max||''}`:''}</div>`).join('') : ''}
+            </div>`;
+        }).join('');
+      }
+      html += `</div></div>`;
+      box.innerHTML = html;
+
+      // Bind dragstart on session items
+      box.querySelectorAll('.session-item').forEach(el => {
+        el.addEventListener('dragstart', (e) => {
+          draggedSessionId = el.dataset.sessionId;
+          el.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          try { e.dataTransfer.setData('text/plain', draggedSessionId); } catch {}
+        });
+        el.addEventListener('dragend', () => el.classList.remove('dragging'));
+      });
+    }
+
+    // Calendar rendering
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDate = new Date(firstDay);
+      startDate.setDate(startDate.getDate() - firstDay.getDay());
+      const days = [];
+      for (let i = 0; i < 42; i++) { // 6 weeks
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + i);
+        days.push(d);
+      }
+
+      let html = '';
+      ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'].forEach(d => {
+        html += `<div class="day-header">${d}</div>`;
+      });
+      const today = new Date();
+      days.forEach(d => {
+        const dateStr = d.toISOString().slice(0,10);
+        const isOther = d.getMonth() !== month;
+        const isToday = d.toDateString() === today.toDateString();
+        const isSelected = selectedDate && (new Date(selectedDate).toDateString() === d.toDateString());
+        const items = scheduledItems.filter(it => it.date === dateStr);
+        html += `
+          <div class="day-cell ${isOther?'other-month':''} ${isToday?'today':''} ${isSelected?'selected':''}" data-date="${dateStr}">
+            <div class="day-number">${d.getDate()}</div>
+            <div class="day-events">
+              ${items.map(it => `<span class=\"event-pill\" data-item-id=\"${it.id}\">${Utils.escapeHtml(it.sessioni?.nome || it.session_name || 'Sessione')} <span class=\"del\" title=\"Elimina\" data-del-id=\"${it.id}\">✕</span></span>`).join('')}
+            </div>
+          </div>`;
+      });
+      grid.innerHTML = html;
+
+      // Bind DnD on cells
+      grid.querySelectorAll('.day-cell').forEach(cell => {
+        // selection
+        cell.addEventListener('click', () => {
+          selectedDate = new Date(cell.dataset.date);
+          grid.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
+          cell.classList.add('selected');
+        });
+        cell.addEventListener('dragover', (e) => {
+          if (!selectedClient) return; // need a client
+          e.preventDefault();
+          cell.classList.add('drag-over');
+        });
+        cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+        cell.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          cell.classList.remove('drag-over');
+          const sessionId = draggedSessionId || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
+          draggedSessionId = null;
+          if (!sessionId || !selectedClient) return;
+          if (cell.classList.contains('other-month')) { return; }
+          await createScheduledItem(sessionId, cell.dataset.date);
+        });
+      });
+
+      // Bind delete click
+      grid.querySelectorAll('.event-pill .del').forEach(del => {
+        del.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = del.getAttribute('data-del-id');
+          if (!confirm('Eliminare questa pianificazione?')) return;
+          await deleteScheduledItem(id);
+        });
+      });
+    }
+
+    async function loadScheduleForMonth() {
+      scheduledItems = [];
+      if (!selectedClient) return;
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const start = firstDay.toISOString().slice(0,10);
+      const end = lastDay.toISOString().slice(0,10);
+      try {
+        const t = GymAPI.getToken();
+        const url = `${GymAPI.baseURL}/trainer/schedule?user_id=${encodeURIComponent(selectedClient.id)}&start=${start}&end=${end}`;
+        console.log('[Calendario] GET schedule', { url });
+        const r = await fetch(url, { headers: { Authorization: 'Bearer ' + t }});
+        const data = await r.json();
+        scheduledItems = data.items || [];
+        console.log('[Calendario] Loaded items', scheduledItems.length);
+      } catch (e) {
+        console.error('[Calendario] loadScheduleForMonth error', e);
+        scheduledItems = [];
+      }
+    }
+
+    async function createScheduledItem(sessione_id, date) {
+      try {
+        const t = GymAPI.getToken();
+        console.log('[Calendario] POST schedule', { user_id: selectedClient.id, sessione_id, date });
+        const r = await fetch(`${GymAPI.baseURL}/trainer/schedule`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + t },
+          body: JSON.stringify({ user_id: selectedClient.id, sessione_id, date })
+        });
+        if (!r.ok) {
+          const err = await r.text().catch(()=> '');
+          console.error('[Calendario] createScheduledItem failed', err);
+          alert('Errore salvataggio: ' + err);
+          return;
+        }
+        const res = await r.json().catch(()=>({}));
+        console.log('[Calendario] Created', res);
+        await loadScheduleForMonth();
+        renderCalendar();
+      } catch (e) {
+        console.error('[Calendario] createScheduledItem network error', e);
+        alert('Errore di rete nella creazione');
+      }
+    }
+
+    async function deleteScheduledItem(id) {
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/schedule/${encodeURIComponent(id)}`, {
+          method: 'DELETE', headers: { Authorization: 'Bearer ' + t }
+        });
+        if (!r.ok) { alert('Eliminazione fallita'); return; }
+        console.log('[Calendario] Deleted id', id);
+        scheduledItems = scheduledItems.filter(x => x.id !== id);
+        renderCalendar();
+      } catch (e) { alert('Errore di rete'); }
+    }
+
+    async function deleteFromSelected() {
+      if (!selectedClient) return alert('Seleziona un cliente');
+      if (!selectedDate) return alert('Seleziona una data sul calendario');
+      const from = new Date(selectedDate).toISOString().slice(0,10);
+      if (!confirm(`Eliminare tutte le pianificazioni dal ${from} in avanti?`)) return;
+      try {
+        const t = GymAPI.getToken();
+        const url = `${GymAPI.baseURL}/trainer/schedule?user_id=${encodeURIComponent(selectedClient.id)}&start=${from}`;
+        const r = await fetch(url, { method: 'DELETE', headers: { Authorization: 'Bearer ' + t }});
+        if (!r.ok) { const d = await r.text().catch(()=> ''); return alert('Eliminazione fallita: ' + d); }
+        await loadScheduleForMonth();
+        renderCalendar();
+        alert('Pianificazioni eliminate');
+      } catch (e) { alert('Errore di rete nell\'eliminazione'); }
+    }
+
+    function changeMonth(dir) {
+      currentDate.setMonth(currentDate.getMonth() + dir);
+      Promise.resolve(loadScheduleForMonth()).then(renderCalendar);
+    }
+
+    function goToToday() {
+      currentDate = new Date();
+      Promise.resolve(loadScheduleForMonth()).then(renderCalendar);
+    }
+
+    function mondayOf(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = (day === 0 ? -6 : 1) - day; // Monday as start; if Sunday, go back 6
+      d.setDate(d.getDate() + diff);
+      d.setHours(0,0,0,0);
+      return d;
+    }
+
+    async function extendCurrentWeek() {
+      if (!selectedClient) return alert('Seleziona un cliente');
+      const weeksField = document.getElementById('weeksInput');
+      let weeks = parseInt(weeksField.value || '0', 10);
+      if (!weeks && currentPlan?.durata_settimane) weeks = parseInt(currentPlan.durata_settimane, 10);
+      if (!weeks || weeks < 1) return alert('Numero settimane non valido');
+      // Seleziona la settimana: se l'utente ha selezionato un giorno, usa quella settimana; altrimenti usa la prima occorrenza
+      const startWeek = selectedDate ? mondayOf(new Date(selectedDate)).toISOString().slice(0,10) : 'first';
+      console.log('[Calendario] EXTEND', { user_id: selectedClient.id, start_week: startWeek, weeks });
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/schedule/extend`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + t },
+          body: JSON.stringify({ user_id: selectedClient.id, start_week: startWeek, weeks })
+        });
+        const data = await r.json().catch(()=> ({}));
+        if (!r.ok) { console.error('[Calendario] extend failed', data); return alert('Estensione fallita'); }
+        console.log('[Calendario] extend result', data);
+        await loadScheduleForMonth();
+        renderCalendar();
+        alert(`Settimana estesa: inseriti ${data.inserted || 0} elementi`);
+      } catch (e) {
+        console.error('[Calendario] extend network error', e);
+        alert('Errore rete in estensione');
+      }
+    }
+
+    function logout() {
+      const confirmLogout = confirm('Sei sicuro di voler uscire?');
+      if (confirmLogout) GymAPI.logout();
+    }
+
+    // Init page
+    (async function init() {
+      if (!await checkTrainerAccess()) return;
+      await loadClients();
+      await loadScheduleForMonth();
+      renderCalendar();
+    })();
+  </script>
+</body>
+</html>

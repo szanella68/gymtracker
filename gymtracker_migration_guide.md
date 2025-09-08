@@ -56,6 +56,22 @@ SUPABASE_ANON_KEY=eyJhbGciOiJ... (configured)
 
 ---
 
+## 🩹 Migrazione rapida: campi exercises mancanti
+
+Se l'intensità o il link esterno degli esercizi non si salvano, aggiungi le colonne al DB Supabase (tabella `exercises`). Esegui queste query nella sezione SQL della dashboard:
+
+```sql
+ALTER TABLE exercises
+  ADD COLUMN IF NOT EXISTS intensity INTEGER DEFAULT 0 CHECK (intensity >= 0 AND intensity <= 10);
+
+ALTER TABLE exercises
+  ADD COLUMN IF NOT EXISTS external_url TEXT;
+```
+
+Non è necessario toccare le policy RLS: gli endpoint admin usano Service Role Key. Il frontend già invia/legge `intensity` ed `external_url` con `PUT /api/trainer/exercises/:id`.
+
+---
+
 ## 🏗️ **ARCHITETTURA ATTUALE**
 
 ### **📁 Structure Implementata**

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymTracker - Obiettivi Personali</title>
+  <base href="/gymtracker/">
+  <link rel="stylesheet" href="shared/css/shared.css">
+  <link rel="stylesheet" href="utente/css/utente.css">
+</head>
+<body>
+  <div class="profile-container">
+    <div class="nav-breadcrumb">
+      <a href="utente/dashboard.html" class="breadcrumb-link">🏠 Dashboard</a>
+      <span class="breadcrumb-separator">›</span>
+      <span class="breadcrumb-current">🎯 Obiettivi Personali</span>
+    </div>
+    <div class="profile-header">
+      <h1>🎯 Obiettivi Personali</h1>
+      <div class="header-actions">
+        <button onclick="logout()" class="btn-logout">Esci</button>
+      </div>
+    </div>
+
+    <!-- Intestazione e lista obiettivi -->
+
+    <div class="card">
+      <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <h3>📋 I tuoi obiettivi</h3>
+        <button class="btn-primary" onclick="openCreateGoal()">+ Aggiungi</button>
+      </div>
+      <div id="goalsList" class="weight-history"></div>
+    </div>
+  </div>
+
+  <script src="shared/js/core/api.js"></script>
+  <script src="shared/js/core/utils.js"></script>
+  <script>
+    if (!GymAPI.isAuthenticated()) window.location.href = '/gymtracker/utente/';
+
+    function logout(){ if (confirm('Uscire?')) GymAPI.logout(); }
+
+    // Modal helpers: warn on unsaved changes when closing (X, ESC, backdrop)
+    function addModalCloseGuards(modalEl, isDirtyFn) {
+      if (!modalEl) return;
+      function attemptClose() {
+        try {
+          if (isDirtyFn && isDirtyFn()) {
+            const ok = confirm('Hai modifiche non salvate. Chiudere senza salvare?');
+            if (!ok) return;
+          }
+        } catch {}
+        cleanup();
+        modalEl.remove();
+      }
+      function onBackdrop(e){ if (e.target === modalEl) attemptClose(); }
+      function onKey(e){ if (e.key === 'Escape') attemptClose(); }
+      function cleanup(){
+        modalEl.removeEventListener('click', onBackdrop);
+        document.removeEventListener('keydown', onKey);
+      }
+      modalEl._attemptClose = attemptClose; // expose for close button
+      modalEl._onBackdrop = onBackdrop;
+      modalEl._onKey = onKey;
+      modalEl._cleanup = cleanup;
+      modalEl.addEventListener('click', onBackdrop);
+      document.addEventListener('keydown', onKey);
+    }
+    function closeModal(id){ const el = document.getElementById(id); if (!el) return; (el._attemptClose ? el._attemptClose() : el.remove()); }
+    function destroyModal(id){ const el = document.getElementById(id); if (!el) return; try { el._cleanup && el._cleanup(); } catch {} el.remove(); }
+
+    async function loadGoals() {
+      const box = document.getElementById('goalsList');
+      try {
+        const data = await GymAPI.get('/users/me/goals');
+        const items = data.items || [];
+        // cache items for editing
+        window._goalsCache = items.reduce((acc, it) => { acc[it.id] = it; return acc; }, {});
+        if (!items.length) { box.innerHTML = '<div class="empty-state">Nessun obiettivo</div>'; return; }
+        box.innerHTML = items.map(g => `
+          <div class="weight-entry">
+            <div>
+              <div><strong>${Utils.escapeHtml(g.title)}</strong> ${g.target_value ? `— target ${g.target_value}${g.unit ? (' '+g.unit) : ''}` : ''}</div>
+              <div style="font-size:12px; color:#6c757d;">${g.target_date? 'Scadenza: '+Utils.formatDate(g.target_date): ''} • Stato: ${g.status}</div>
+            </div>
+            <div>
+              <button class="btn btn-sm" onclick="openEditGoal('${g.id}')">Modifica</button>
+              <button class="btn btn-sm" onclick="openProgress('${g.id}','${Utils.escapeHtml(g.title)}')">Progresso</button>
+              ${g.target_type==='weight' ? '' : `<button class="btn btn-sm" onclick="deleteGoal('${g.id}')">Elimina</button>`}
+            </div>
+          </div>`).join('');
+      } catch (e) {
+        box.innerHTML = '<div class="error-message">Errore caricamento obiettivi</div>';
+      }
+    }
+
+    async function createGoal() {
+      const title = document.getElementById('goalTitle').value.trim();
+      const target_type = document.getElementById('goalType').value;
+      const target_value = (()=>{ const v=document.getElementById('goalValue').value; return v===''? null : Number(v); })();
+      const unit = document.getElementById('goalUnit').value.trim() || null;
+      const target_date = document.getElementById('goalDate').value || null;
+      const description = document.getElementById('goalDesc').value.trim() || null;
+      if (!title) return alert('Titolo richiesto');
+      try {
+        await GymAPI.post('/users/me/goals', { title, target_type, target_value, unit, target_date, description });
+        // chiudi modale e pulisci
+        destroyModal('goalCreateModal');
+        await loadGoals();
+      } catch (e) { alert('Errore creazione obiettivo'); }
+    }
+
+    function openCreateGoal() {
+      const box = document.createElement('div');
+      box.className = 'modal';
+      box.id = 'goalCreateModal';
+      box.innerHTML = `
+        <div class="modal-content">
+          <button class="modal-close" onclick="closeModal('goalCreateModal')">&times;</button>
+          <h2>➕ Nuovo Obiettivo</h2>
+          <div class="goal-form" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="form-group">
+              <label>Titolo</label>
+              <input id="goalTitle" type="text" placeholder="Es: Correre maratona in 3 ore">
+            </div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select id="goalType">
+                <option value="custom">Custom</option>
+                <option value="weight">Peso</option>
+                <option value="reps">Ripetizioni</option>
+                <option value="time">Tempo</option>
+                <option value="distance">Distanza</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target</label>
+              <input id="goalValue" type="number" step="0.1" placeholder="Valore">
+            </div>
+            <div class="form-group">
+              <label>Unità</label>
+              <input id="goalUnit" type="text" placeholder="kg, reps, min, km...">
+            </div>
+            <div class="form-group">
+              <label>Scadenza</label>
+              <input id="goalDate" type="date">
+            </div>
+            <div class="form-group" style="flex:1; min-width:240px;">
+              <label>Descrizione</label>
+              <input id="goalDesc" type="text" placeholder="Dettagli opzionali">
+            </div>
+            <div class="form-group">
+              <button class="btn-primary" onclick="createGoal()">Crea</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(box); setTimeout(()=> box.classList.add('show'), 10);
+      // add unsaved-changes guard
+      addModalCloseGuards(box, function isDirtyCreate(){
+        const title = document.getElementById('goalTitle')?.value?.trim() || '';
+        const type = document.getElementById('goalType')?.value || 'custom';
+        const valueRaw = document.getElementById('goalValue')?.value || '';
+        const unit = document.getElementById('goalUnit')?.value?.trim() || '';
+        const date = document.getElementById('goalDate')?.value || '';
+        const desc = document.getElementById('goalDesc')?.value?.trim() || '';
+        // dirty if any non-default / non-empty
+        return !!(title || valueRaw || unit || date || desc || type !== 'custom');
+      });
+    }
+
+    async function deleteGoal(id) {
+      if (!confirm('Eliminare obiettivo?')) return;
+      try { await GymAPI.delete(`/users/me/goals/${encodeURIComponent(id)}`); await loadGoals(); } catch (e) { alert('Errore eliminazione'); }
+    }
+
+    function openEditGoal(id) {
+      const g = (window._goalsCache && window._goalsCache[id]) || null;
+      if (!g) return alert('Obiettivo non trovato');
+      const box = document.createElement('div');
+      box.className = 'modal';
+      box.id = 'goalEditModal';
+      box.innerHTML = `
+        <div class="modal-content">
+          <button class="modal-close" onclick="closeModal('goalEditModal')">&times;</button>
+          <h2>✏️ Modifica Obiettivo</h2>
+          <div class="goal-form" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="form-group">
+              <label>Titolo</label>
+              <input id="editGoalTitle" type="text" value="${Utils.escapeHtml(g.title || '')}" placeholder="Titolo">
+            </div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select id="editGoalType">
+                <option value="custom" ${g.target_type==='custom'?'selected':''}>Custom</option>
+                <option value="weight" ${g.target_type==='weight'?'selected':''}>Peso</option>
+                <option value="reps" ${g.target_type==='reps'?'selected':''}>Ripetizioni</option>
+                <option value="time" ${g.target_type==='time'?'selected':''}>Tempo</option>
+                <option value="distance" ${g.target_type==='distance'?'selected':''}>Distanza</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target</label>
+              <input id="editGoalValue" type="number" step="0.1" value="${g.target_value ?? ''}" placeholder="Valore">
+            </div>
+            <div class="form-group">
+              <label>Unità</label>
+              <input id="editGoalUnit" type="text" value="${Utils.escapeHtml(g.unit || '')}" placeholder="kg, reps, min, km...">
+            </div>
+            <div class="form-group">
+              <label>Scadenza</label>
+              <input id="editGoalDate" type="date" value="${g.target_date ? String(g.target_date).slice(0,10) : ''}">
+            </div>
+            <div class="form-group" style="flex:1; min-width:240px;">
+              <label>Descrizione</label>
+              <input id="editGoalDesc" type="text" value="${Utils.escapeHtml(g.description || '')}" placeholder="Dettagli opzionali">
+            </div>
+            <div class="form-group">
+              <label>Stato</label>
+              <select id="editGoalStatus">
+                <option value="in_progress" ${g.status==='in_progress'?'selected':''}>In corso</option>
+                <option value="completed" ${g.status==='completed'?'selected':''}>Completato</option>
+                <option value="paused" ${g.status==='paused'?'selected':''}>In pausa</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <button class="btn-primary" onclick="updateGoal('${id}')">Salva</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(box); setTimeout(()=> box.classList.add('show'), 10);
+      // add unsaved-changes guard comparing to initial values
+      addModalCloseGuards(box, function isDirtyEdit(){
+        const cur = {
+          title: document.getElementById('editGoalTitle')?.value?.trim() || '',
+          target_type: document.getElementById('editGoalType')?.value || '',
+          target_value: document.getElementById('editGoalValue')?.value || '',
+          unit: document.getElementById('editGoalUnit')?.value?.trim() || '',
+          target_date: document.getElementById('editGoalDate')?.value || '',
+          description: document.getElementById('editGoalDesc')?.value?.trim() || '',
+          status: document.getElementById('editGoalStatus')?.value || ''
+        };
+        const init = {
+          title: g.title || '',
+          target_type: g.target_type || '',
+          target_value: (g.target_value ?? '') + '',
+          unit: g.unit || '',
+          target_date: g.target_date ? String(g.target_date).slice(0,10) : '',
+          description: g.description || '',
+          status: g.status || ''
+        };
+        return Object.keys(cur).some(k => cur[k] !== init[k]);
+      });
+    }
+
+    async function updateGoal(id) {
+      const title = document.getElementById('editGoalTitle').value.trim();
+      const target_type = document.getElementById('editGoalType').value;
+      const target_value = (()=>{ const v=document.getElementById('editGoalValue').value; return v===''? null : Number(v); })();
+      const unit = document.getElementById('editGoalUnit').value.trim() || null;
+      const target_date = document.getElementById('editGoalDate').value || null;
+      const description = document.getElementById('editGoalDesc').value.trim() || null;
+      const status = document.getElementById('editGoalStatus').value;
+      if (!title) return alert('Titolo richiesto');
+      try {
+        await GymAPI.put(`/users/me/goals/${encodeURIComponent(id)}`, { title, target_type, target_value, unit, target_date, description, status });
+        destroyModal('goalEditModal');
+        await loadGoals();
+      } catch (e) { alert('Errore salvataggio obiettivo'); }
+    }
+
+    async function openProgress(id, title) {
+      const box = document.createElement('div');
+      box.className = 'modal';
+      box.id = 'goalProgressModal';
+      const today = new Date().toISOString().slice(0,10);
+      box.innerHTML = `<div class="modal-content">
+        <button class="modal-close" onclick="closeModal('goalProgressModal')">&times;</button>
+        <h2>📈 Progresso — ${title}</h2>
+        <div id="progressList" class="weight-history" style="max-height:300px; overflow:auto;"></div>
+        <div class="flex" style="gap:8px; margin-top:10px;">
+          <input id="progressDate" type="date" style="width:160px;" value="${today}"/>
+          <input id="progressValue" type="number" step="0.1" placeholder="Valore" style="width:140px;"/>
+          <input id="progressNote" type="text" placeholder="Nota (opzionale)" style="flex:1;"/>
+          <button class="btn-primary" onclick="addProgress('${id}')">Aggiungi</button>
+        </div>
+      </div>`;
+      document.body.appendChild(box); setTimeout(()=> box.classList.add('show'), 10);
+      // guard: avvisa se ci sono modifiche non salvate
+      addModalCloseGuards(box, function isDirtyProgress(){
+        const date = document.getElementById('progressDate')?.value || '';
+        const val = document.getElementById('progressValue')?.value || '';
+        const note = document.getElementById('progressNote')?.value?.trim() || '';
+        return !!(val || note || date !== today);
+      });
+      window._currentGoalId = id;
+      await loadProgress(id);
+    }
+
+    async function loadProgress(id) {
+      const list = document.getElementById('progressList');
+      list.innerHTML = 'Caricamento...';
+      try {
+        const data = await GymAPI.get(`/users/me/goals/${encodeURIComponent(id)}/progress`);
+        const items = data.items || [];
+        list.innerHTML = items.length ? items.map(p => `
+          <div class="weight-entry">
+            <span class="weight-date">${Utils.formatDate(p.log_date)}</span>
+            <span class="weight-value">${p.value ?? ''}</span>
+            <span class="weight-change start">${Utils.escapeHtml(p.note || '')}</span>
+          </div>`).join('') : '<div class="empty-state">Nessun progresso registrato</div>';
+      } catch (e) { list.innerHTML = '<div class="error-message">Errore caricamento progressi</div>'; }
+    }
+
+    async function addProgress(id) {
+      const value = (()=>{ const v=document.getElementById('progressValue').value; return v===''? null : Number(v); })();
+      const note = document.getElementById('progressNote').value.trim() || null;
+      const log_date = document.getElementById('progressDate').value || null;
+      try {
+        await GymAPI.post(`/users/me/goals/${encodeURIComponent(id)}/progress`, { value, note, log_date });
+        await loadProgress(id);
+        // reset campi per evitare falsi avvisi di unsaved changes dopo salvataggio
+        const today = new Date().toISOString().slice(0,10);
+        const dateEl = document.getElementById('progressDate');
+        const valEl = document.getElementById('progressValue');
+        const noteEl = document.getElementById('progressNote');
+        if (dateEl) dateEl.value = today;
+        if (valEl) valEl.value = '';
+        if (noteEl) noteEl.value = '';
+      } catch (e) { alert('Errore aggiunta progresso'); }
+    }
+
+    (async function init(){ await loadGoals(); })();
+  </script>
+</body>
+</html>

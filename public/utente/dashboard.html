@@ -51,6 +51,12 @@
                 <p>Allenamenti programmati e da completare</p>
             </a>
             
+            <a href="utente/goals.html" class="nav-card">
+                <div class="nav-icon">🎯</div>
+                <h3>Obiettivi Personali</h3>
+                <p>Crea e traccia i tuoi obiettivi</p>
+            </a>
+
             <a href="utente/profilo.html" class="nav-card">
                 <div class="nav-icon">👤</div>
                 <h3>Il mio Profilo</h3>
@@ -168,37 +174,34 @@
         
         async function loadUpcomingSessions() {
             try {
-                // This would be replaced with actual API call when calendar endpoints are implemented
-                // const sessions = await GymAPI.get('/calendar/upcoming');
-                
-                // For now, show empty state or sample data
                 const sessionsContainer = document.getElementById('upcomingSessions');
-                
-                // Sample upcoming sessions (remove when API is ready)
-                const sampleSessions = [];
-                
-                if (sampleSessions.length === 0) {
+                const today = new Date();
+                const end = new Date(); end.setDate(end.getDate() + 21); // prossime 3 settimane
+                const fmt = d => d.toISOString().slice(0,10);
+
+                const data = await GymAPI.get(`/users/me/schedule?start=${fmt(today)}&end=${fmt(end)}`);
+                let items = (data.items || []).filter(it => (it.status || 'planned') !== 'completed');
+                // sort by date asc
+                items.sort((a,b) => a.date.localeCompare(b.date));
+                if (items.length === 0) {
                     sessionsContainer.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-icon">📅</div>
-                            <h3>Nessun allenamento programmato</h3>
-                            <p>I tuoi prossimi allenamenti appariranno qui quando il trainer li assegnerà.</p>
-                            <button class="btn-primary" onclick="window.location.href='/gymtracker/utente/calendario.html'">
-                                Visualizza Calendario
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    sessionsContainer.innerHTML = sampleSessions.map(session => `
-                        <div class="session-item">
-                            <div class="session-info">
-                                <h4>${session.program_name}</h4>
-                                <p>${Utils.formatDateTime(session.scheduled_date)}</p>
-                            </div>
-                            <span class="session-status ${session.status}">${session.status}</span>
-                        </div>
-                    `).join('');
+                            <h3>Nessun allenamento imminente</h3>
+                            <p>Controlla il tuo calendario per vedere tutte le pianificazioni.</p>
+                            <button class="btn-primary" onclick="window.location.href='/gymtracker/utente/calendario.html'">Visualizza Calendario</button>
+                        </div>`;
+                    return;
                 }
+                sessionsContainer.innerHTML = items.slice(0,8).map(it => `
+                    <div class="session-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #e9ecef;">
+                        <div class="session-info">
+                            <h4 style="margin:0;">${Utils.escapeHtml(it.sessioni?.nome || 'Allenamento')}</h4>
+                            <p style="margin:4px 0 0; color:#6c757d;">${Utils.formatDate(it.date)}</p>
+                        </div>
+                        <span class="session-status ${it.status || 'planned'}" style="font-size:12px; padding:4px 8px; border-radius:12px; border:1px solid #e9ecef;">${(it.status || 'planned')}</span>
+                    </div>
+                `).join('');
                 
             } catch (error) {
                 console.error('Error loading upcoming sessions:', error);

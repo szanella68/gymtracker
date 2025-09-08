@@ -11,7 +11,10 @@ const trainerRoutes = require('./routes/trainer');
 const { ensureSupabaseSchema } = require('./config/supabase');
 
 const app = express();
-const PORT = process.env.PORT || 3007;
+const PORT = process.env.PORT || 3010;
+
+// Behind Apache we want to trust proxy headers (X-Forwarded-*)
+app.set('trust proxy', true);
 
 // Security middleware
 app.use(helmet({
@@ -30,6 +33,7 @@ app.use('/api/', limiter);
 // CORS configuration
 app.use(cors({
   origin: [
+    'http://localhost:3010',
     'http://localhost:3007',
     'https://zanserver.sytes.net',
     process.env.FRONTEND_URL || 'https://zanserver.sytes.net'
@@ -58,6 +62,9 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
+// Avoid favicon 404s at root
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // Catch-all route for frontend (SPA support)
 app.get('/gymtracker/*', (req, res) => {

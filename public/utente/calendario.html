@@ -34,9 +34,7 @@
                 <button onclick="changeMonth(1)" class="btn-secondary">Successivo ›</button>
             </div>
 
-            <div class="calendar-grid" id="calendarGrid">
-                <!-- Calendar will be generated here -->
-            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
         </div>
 
         <div class="card">
@@ -83,142 +81,217 @@
         }
 
         let currentDate = new Date();
-        const monthNames = [
-            "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-            "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
-        ];
-        const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+        let scheduledItems = [];
+        const monthNames = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+        const dayNames = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+
+        async function loadScheduleForMonth() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const firstDay = new Date(year, month, 1).toISOString().slice(0,10);
+            const lastDay = new Date(year, month + 1, 0).toISOString().slice(0,10);
+            try {
+                const data = await GymAPI.get(`/users/me/schedule?start=${firstDay}&end=${lastDay}`);
+                scheduledItems = data.items || [];
+                // Also load goal deadlines for the month
+                try {
+                    const g = await GymAPI.get('/users/me/goals');
+                    const goals = (g.items || []).filter(x => x.target_date && x.status !== 'completed');
+                    window._goalDeadlines = goals.filter(x => x.target_date >= firstDay && x.target_date <= lastDay);
+                } catch { window._goalDeadlines = []; }
+            } catch (e) {
+                console.error('Load my schedule failed', e);
+                scheduledItems = [];
+            }
+        }
 
         function renderCalendar() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            
-            // Update month header
-            document.getElementById('currentMonth').textContent = 
-                `${monthNames[month]} ${year}`;
+            document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
 
-            // Get first day of month and number of days
             const firstDay = new Date(year, month, 1);
+            const startingDayOfWeek = firstDay.getDay();
             const lastDay = new Date(year, month + 1, 0);
             const daysInMonth = lastDay.getDate();
-            const startingDayOfWeek = firstDay.getDay();
 
-            let calendarHTML = '';
-            
-            // Add day headers
-            dayNames.forEach(day => {
-                calendarHTML += `<div class="calendar-day-header">${day}</div>`;
-            });
-
-            // Add empty cells for days before the first day
-            for (let i = 0; i < startingDayOfWeek; i++) {
-                calendarHTML += '<div class="calendar-day other-month"></div>';
-            }
-
-            // Add days of the month
+            let html = '';
+            dayNames.forEach(d => html += `<div class="calendar-day-header">${d}</div>`);
+            for (let i = 0; i < startingDayOfWeek; i++) html += '<div class="calendar-day other-month"></div>';
             const today = new Date();
             for (let day = 1; day <= daysInMonth; day++) {
-                const dayDate = new Date(year, month, day);
-                const isToday = dayDate.toDateString() === today.toDateString();
-                const hasWorkout = Math.random() > 0.7; // Mock workout data
-                
-                let dayClass = 'calendar-day';
-                if (isToday) dayClass += ' today';
-                if (hasWorkout) dayClass += ' has-workout';
-
-                calendarHTML += `
-                    <div class="${dayClass}" onclick="showDayDetails(${year}, ${month}, ${day})">
-                        <div class="day-number">${day}</div>
-                        ${hasWorkout ? '<div class="workout-indicator">Allenamento</div>' : ''}
-                    </div>
-                `;
+                const d = new Date(year, month, day);
+                const dateStr = d.toISOString().slice(0,10);
+                const isToday = d.toDateString() === today.toDateString();
+                const items = scheduledItems.filter(it => it.date === dateStr);
+                const anyCompleted = items.some(it => (it.status || '').toLowerCase() === 'completed');
+                let classes = 'calendar-day';
+                if (isToday) classes += ' today';
+                if (items.length) classes += ' has-workout';
+                if (anyCompleted) classes += ' completed';
+                const goalIcons = (window._goalDeadlines || []).filter(go => go.target_date === dateStr);
+                html += `
+                  <div class="${classes}" onclick="showDayDetails(${year}, ${month}, ${day})">
+                    <div class="day-number">${day}</div>
+                    ${goalIcons.map(go => `<div class=\"workout-indicator\" style=\"background:#0ea5e9;color:#fff;\" title=\"Scadenza obiettivo\">🎯 ${Utils.escapeHtml(go.title)}</div>`).join('')}
+                    ${items.map(it => {
+                        const done = (it.status||'').toLowerCase()==='completed';
+                        return `<div class=\"workout-indicator ${done ? 'completed' : ''}\">${(it.sessioni && it.sessioni.nome) ? it.sessioni.nome : 'Allenamento'}</div>`;
+                    }).join('')}
+                  </div>`;
             }
-
-            document.getElementById('calendarGrid').innerHTML = calendarHTML;
+            document.getElementById('calendarGrid').innerHTML = html;
         }
 
-        function changeMonth(direction) {
+        async function changeMonth(direction) {
             currentDate.setMonth(currentDate.getMonth() + direction);
+            await loadScheduleForMonth();
             renderCalendar();
         }
 
-        function goToToday() {
+        async function goToToday() {
             currentDate = new Date();
+            await loadScheduleForMonth();
             renderCalendar();
         }
 
-        function showDayDetails(year, month, day) {
+        async function showDayDetails(year, month, day) {
             const date = new Date(year, month, day);
-            const dateStr = date.toLocaleDateString('it-IT');
-            
-            // Mock session data - replace with actual API call
-            const mockSession = {
-                date: dateStr,
-                program: "Allenamento Full Body",
-                status: "scheduled",
-                exercises: [
-                    { name: "Squat", sets: 3, reps: "10-12" },
-                    { name: "Panca piana", sets: 3, reps: "8-10" },
-                    { name: "Trazioni", sets: 3, reps: "Max" }
-                ]
-            };
-
+            const dateStr = date.toISOString().slice(0,10);
+            const display = date.toLocaleDateString('it-IT');
+            const items = scheduledItems.filter(it => it.date === dateStr);
+            const list = items.length
+              ? `<ul class="exercises-list">${items.map(it => `<li style=\"display:flex; justify-content:space-between; align-items:center; gap:8px;\"><strong>${it.sessioni?.nome || 'Allenamento'}</strong><button class=\"btn-primary\" onclick=\"startWorkout('${it.sessione_id}','${dateStr}')\">Inizia</button></li>`).join('')}</ul>`
+              : '<div class="empty-state">Nessun allenamento pianificato</div>';
             document.getElementById('sessionDetails').innerHTML = `
-                <h2>📅 ${dateStr}</h2>
+                <h2>📅 ${display}</h2>
                 <div class="session-info">
-                    <h3>${mockSession.program}</h3>
-                    <p><strong>Stato:</strong> <span class="session-status ${mockSession.status}">
-                        ${mockSession.status === 'scheduled' ? 'Programmato' : 
-                          mockSession.status === 'completed' ? 'Completato' : 'In corso'}
-                    </span></p>
-                    
-                    <h4>Esercizi previsti:</h4>
-                    <ul class="exercises-list">
-                        ${mockSession.exercises.map(ex => 
-                            `<li><strong>${ex.name}</strong> - ${ex.sets} serie x ${ex.reps} reps</li>`
-                        ).join('')}
-                    </ul>
-                    
-                    ${mockSession.status === 'scheduled' ? 
-                        '<button class="btn-primary w-full" onclick="startWorkout()">🏋️ Inizia Allenamento</button>' :
-                        '<button class="btn-secondary w-full" onclick="viewWorkoutDetails()">📊 Vedi Dettagli</button>'
-                    }
-                </div>
-            `;
-            
+                    ${list}
+                </div>`;
             document.getElementById('sessionModal').classList.add('show');
         }
 
-        function startWorkout() {
-            alert('Funzionalità in sviluppo: Sistema di logging allenamenti');
-            closeModal('sessionModal');
-        }
+        function closeModal(modalId) { document.getElementById(modalId).classList.remove('show'); }
+        function logout() { const c = confirm('Sei sicuro di voler uscire?'); if (c) GymAPI.logout(); }
+        document.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) closeModal(e.target.id); });
 
-        function viewWorkoutDetails() {
-            alert('Funzionalità in sviluppo: Dettagli allenamento completato');
-            closeModal('sessionModal');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('show');
-        }
-
-        function logout() {
-            const confirmLogout = confirm('Sei sicuro di voler uscire?');
-            if (confirmLogout) {
-                GymAPI.logout();
+        async function startWorkout(sessione_id, dateStr) {
+            try {
+                console.log('[User] startWorkout', { sessione_id, date: dateStr, url: GymAPI.baseURL + '/users/me/workouts/start' });
+                const { workout } = await GymAPI.post('/users/me/workouts/start', { sessione_id, date: dateStr });
+                await openWorkoutForm(workout.id);
+            } catch (e) {
+                console.error('[User] startWorkout error', e);
+                alert('Impossibile avviare la sessione');
             }
         }
 
-        // Close modal when clicking outside
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                closeModal(e.target.id);
+        async function openWorkoutForm(workoutLogId) {
+            try {
+                const data = await GymAPI.get(`/users/me/workouts/${workoutLogId}/details`);
+                const logsByExercise = {};
+                (data.logs || []).forEach(l => { logsByExercise[l.exercise_id] = l; });
+                const prevByExercise = {};
+                (data.previous_logs || []).forEach(l => { prevByExercise[l.exercise_id] = l; });
+                window._prevByExercise = prevByExercise;
+                const html = `
+                  <h2>🏋️ Sessione</h2>
+                  <div class="session-info">
+                    ${data.exercises.map(ex => {
+                      const log = logsByExercise[ex.id];
+                      const current = Array.isArray(log?.actual_sets_data) && log.actual_sets_data.length ? log.actual_sets_data[0] : {};
+                      const prev = Array.isArray(prevByExercise[ex.id]?.actual_sets_data) && prevByExercise[ex.id].actual_sets_data.length ? prevByExercise[ex.id].actual_sets_data[0] : {};
+                      const defReps = (current.reps ?? prev.reps ?? '');
+                      const defWeight = (current.weight ?? prev.weight ?? '');
+                      return `
+                        <div class=\"card\" style=\"box-shadow:none; border:1px solid #e9ecef; margin-bottom:8px;\">
+                          <div class=\"card-header\"><h3>${Utils.escapeHtml(ex.name)}</h3></div>
+                          <div class=\"form-group\">
+                            <label>Ripetizioni</label>
+                            <input type=\"number\" id=\"rep_${ex.id}\" value=\"${defReps}\" min=\"0\" />
+                          </div>
+                          <div class=\"form-group\">
+                            <label>Kg</label>
+                            <input type=\"number\" step=\"0.1\" id=\"kg_${ex.id}\" value=\"${defWeight}\" />
+                          </div>
+                          <div class=\"form-group\">
+                            <label>Note</label>
+                            <textarea id=\"note_${ex.id}\">${log?.notes ? Utils.escapeHtml(log.notes) : ''}</textarea>
+                          </div>
+                          <div class=\"flex\" style=\"gap:8px;\">
+                            <button class=\"btn-secondary\" onclick=\"saveExerciseLog('${workoutLogId}','${ex.id}')\">Salva</button>
+                          </div>
+                        </div>`;
+                    }).join('')}
+                    <div class=\"flex\" style=\"gap:8px;\">
+                      <button class=\"btn-secondary\" onclick=\"copyPrevForAll()\">Copia valori settimana precedente</button>
+                      <button class=\"btn-primary\" onclick=\"saveAllLogs('${workoutLogId}')\">Salva tutto</button>
+                      <button class=\"btn-success\" onclick=\"completeWorkout('${workoutLogId}')\">Completa sessione</button>
+                    </div>
+                  </div>`;
+                document.getElementById('sessionDetails').innerHTML = html;
+            } catch (e) {
+                alert('Errore caricamento esercizi');
             }
-        });
+        }
 
-        // Initialize calendar
-        renderCalendar();
+        async function saveExerciseLog(workoutLogId, exerciseId) {
+            try {
+                const reps = document.getElementById(`rep_${exerciseId}`).value;
+                const weight = document.getElementById(`kg_${exerciseId}`).value;
+                const notes = document.getElementById(`note_${exerciseId}`).value;
+                await GymAPI.post('/users/me/exercise-logs', { workout_log_id: workoutLogId, exercise_id: exerciseId, reps, weight, notes });
+                alert('Salvato');
+            } catch (e) { alert('Errore salvataggio'); }
+        }
+
+        async function saveAllLogs(workoutLogId) {
+            try {
+                // naive: read all inputs with ids rep_*, kg_*, note_*
+                const inputs = Array.from(document.querySelectorAll('[id^="rep_"]'));
+                for (const r of inputs) {
+                    const exerciseId = r.id.replace('rep_', '');
+                    const reps = r.value;
+                    const weight = document.getElementById(`kg_${exerciseId}`).value;
+                    const notes = document.getElementById(`note_${exerciseId}`).value;
+                    await GymAPI.post('/users/me/exercise-logs', { workout_log_id: workoutLogId, exercise_id: exerciseId, reps, weight, notes });
+                }
+                alert('Tutti i dati salvati');
+            } catch (e) { alert('Errore salvataggio multiplo'); }
+        }
+
+        function copyPrevForAll() {
+            const prev = window._prevByExercise || {};
+            let count = 0;
+            document.querySelectorAll('[id^="rep_\"]').forEach(repEl => {
+                const exId = repEl.id.replace('rep_', '');
+                const prevLog = prev[exId];
+                if (prevLog && Array.isArray(prevLog.actual_sets_data) && prevLog.actual_sets_data.length) {
+                    const first = prevLog.actual_sets_data[0] || {};
+                    const r = document.getElementById(`rep_${exId}`);
+                    const k = document.getElementById(`kg_${exId}`);
+                    if (r) r.value = (first.reps ?? '');
+                    if (k) k.value = (first.weight ?? '');
+                    count++;
+                }
+            });
+            alert(count ? 'Valori copiati dalla settimana precedente' : 'Nessun dato precedente disponibile');
+        }
+
+        async function completeWorkout(workoutLogId) {
+            try {
+                await GymAPI.post('/users/me/workouts/complete', { workout_log_id: workoutLogId });
+                alert('Sessione completata');
+                closeModal('sessionModal');
+                await loadScheduleForMonth();
+                renderCalendar();
+            } catch (e) { alert('Errore completamento sessione'); }
+        }
+
+        (async function init() {
+            await loadScheduleForMonth();
+            renderCalendar();
+        })();
 
         // Add styles for new components
         const style = document.createElement('style');
@@ -284,6 +357,9 @@
             .session-info .exercises-list li {
                 margin-bottom: 8px;
             }
+            /* Completed styling */
+            .calendar-day.completed { border-color: #28a745; }
+            .workout-indicator.completed { background: #28a745; color: #fff; }
         `;
         document.head.appendChild(style);
     </script>

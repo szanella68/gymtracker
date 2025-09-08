@@ -71,52 +71,23 @@
             </div>
             
             <div class="chart-container">
-                <!-- Placeholder for chart - in a real app, you'd use Chart.js or similar -->
                 <div class="mock-chart">
                     <div class="chart-placeholder">
                         <div class="chart-icon">📊</div>
                         <h4>Grafico Aderenza Allenamenti</h4>
-                        <p>Visualizzazione del tuo impegno negli allenamenti nel tempo</p>
-                        <div class="mock-chart-bars">
-                            <div class="chart-bar" style="height: 60%;" title="Settimana 1: 60%"></div>
-                            <div class="chart-bar" style="height: 75%;" title="Settimana 2: 75%"></div>
-                            <div class="chart-bar" style="height: 45%;" title="Settimana 3: 45%"></div>
-                            <div class="chart-bar" style="height: 85%;" title="Settimana 4: 85%"></div>
-                        </div>
+                        <p>Aderenza settimanale nel periodo selezionato</p>
+                        <div class="mock-chart-bars"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Weight Progress -->
+        <!-- Recent Completed Workouts -->
         <div class="card">
             <div class="card-header">
-                <h3>⚖️ Progressi Peso Corporeo</h3>
-                <button onclick="addWeightEntry()" class="btn-primary">+ Aggiungi Misurazione</button>
+                <h3>🏁 Allenamenti Completati (recenti)</h3>
             </div>
-            
-            <div class="weight-history">
-                <div class="weight-entry">
-                    <span class="weight-date">1 Gen 2024</span>
-                    <span class="weight-value">75.2 kg</span>
-                    <span class="weight-change start">Peso iniziale</span>
-                </div>
-                <div class="weight-entry">
-                    <span class="weight-date">15 Gen 2024</span>
-                    <span class="weight-value">74.8 kg</span>
-                    <span class="weight-change down">-0.4 kg</span>
-                </div>
-                <div class="weight-entry">
-                    <span class="weight-date">1 Feb 2024</span>
-                    <span class="weight-value">74.1 kg</span>
-                    <span class="weight-change down">-0.7 kg</span>
-                </div>
-                <div class="weight-entry">
-                    <span class="weight-date">15 Feb 2024</span>
-                    <span class="weight-value">73.5 kg</span>
-                    <span class="weight-change down">-0.6 kg</span>
-                </div>
-            </div>
+            <div id="recentCompleted" class="weight-history"></div>
         </div>
 
         <!-- Strength Progress -->
@@ -170,53 +141,12 @@
             </div>
         </div>
 
-        <!-- Goals Progress -->
+        <!-- Recent Exercises Summary -->
         <div class="card">
             <div class="card-header">
-                <h3>🎯 Stato Obiettivi</h3>
-                <a href="utente/profilo.html#fitness" class="btn-secondary">Modifica Obiettivi</a>
+                <h3>💪 Esercizi Recenti</h3>
             </div>
-            
-            <div class="goals-list">
-                <div class="goal-item completed">
-                    <div class="goal-icon">✅</div>
-                    <div class="goal-info">
-                        <h4>Perdere 5kg</h4>
-                        <p>Completato il 15 Feb 2024</p>
-                        <div class="goal-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 100%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="goal-item in-progress">
-                    <div class="goal-icon">🔄</div>
-                    <div class="goal-info">
-                        <h4>Panca piana 100kg</h4>
-                        <p>In corso - Scadenza: Mar 2024</p>
-                        <div class="goal-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 80%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="goal-item pending">
-                    <div class="goal-icon">⏳</div>
-                    <div class="goal-info">
-                        <h4>Correre 5km in 25 minuti</h4>
-                        <p>Da iniziare - Scadenza: Apr 2024</p>
-                        <div class="goal-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 25%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div id="recentExercises" class="weight-history"></div>
         </div>
 
         <!-- Add Weight Modal -->
@@ -251,16 +181,93 @@
             window.location.href = '/gymtracker/utente/';
         }
 
-        function updateChart() {
-            const period = document.getElementById('chartPeriod').value;
-            console.log(`Updating chart for ${period} days`);
-            // In a real implementation, this would fetch new data and update the chart
+        async function updateChart() {
+            const period = parseInt(document.getElementById('chartPeriod').value, 10);
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - (period - 1));
+            const fmt = d => d.toISOString().slice(0,10);
+            // Fetch workouts in period
+            let items = [];
+            try {
+                const data = await GymAPI.get(`/users/me/schedule?start=${fmt(start)}&end=${fmt(end)}`);
+                items = data.items || [];
+            } catch (e) { console.warn('Chart load failed', e); }
+            // Group by ISO week (Mon-Sun)
+            const weekKey = (d) => {
+                const x = new Date(d);
+                // Monday as first day
+                const day = x.getDay();
+                const diff = (day === 0 ? -6 : 1) - day;
+                x.setDate(x.getDate() + diff);
+                return x.toISOString().slice(0,10);
+            };
+            const buckets = new Map();
+            for (const it of items) {
+                const k = weekKey(it.date);
+                const b = buckets.get(k) || { total: 0, completed: 0 };
+                b.total += 1;
+                if ((it.status||'').toLowerCase() === 'completed') b.completed += 1;
+                buckets.set(k, b);
+            }
+            const series = Array.from(buckets.entries()).sort((a,b)=> a[0].localeCompare(b[0]))
+                               .map(([k, b]) => ({ label: k, value: b.total ? Math.round((b.completed/b.total)*100) : 0 }));
+            // Render simple bars
+            const container = document.querySelector('.mock-chart-bars');
+            if (container) {
+                container.innerHTML = series.length ? series.map(s => `<div class="chart-bar" style="height:${Math.max(5, Math.min(100, s.value))}%;" title="${s.label}: ${s.value}%"></div>`).join('') : '<div style="color:#6c757d;">Nessun dato nel periodo</div>';
+            }
         }
 
         function addWeightEntry() {
             // Set today's date as default
             document.getElementById('weightDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('weightModal').classList.add('show');
+        }
+
+        async function loadStats() {
+            try {
+                const s = await GymAPI.get('/users/me/stats');
+                document.getElementById('goalProgress').textContent = (s.adherence_rate ?? 0) + '%';
+                document.getElementById('currentStreak').textContent = s.upcoming_sessions ?? 0; // reuse tile for upcoming
+                document.getElementById('totalWorkouts').textContent = s.completed_workouts ?? 0;
+                document.getElementById('improvement').textContent = `${s.completed_this_month ?? 0}/${s.total_sessions_this_month ?? 0}`;
+            } catch (e) {
+                console.warn('loadStats failed', e);
+            }
+        }
+
+        async function loadRecent() {
+            try {
+                const data = await GymAPI.get('/users/me/recent');
+                const rc = document.getElementById('recentCompleted');
+                if (!data.recent_completed || data.recent_completed.length === 0) {
+                    rc.innerHTML = '<div class="empty-state">Nessun allenamento completato di recente</div>';
+                } else {
+                    rc.innerHTML = data.recent_completed.map(w => `
+                        <div class="weight-entry">
+                            <span class="weight-date">${Utils.formatDate(w.completed_at || w.workout_date)}</span>
+                            <span class="weight-value">${w.sessioni?.nome || 'Allenamento'}</span>
+                            <span class="weight-change down">Completato</span>
+                        </div>
+                    `).join('');
+                }
+
+                const re = document.getElementById('recentExercises');
+                if (!data.recent_exercises || data.recent_exercises.length === 0) {
+                    re.innerHTML = '<div class="empty-state">Nessun esercizio recente</div>';
+                } else {
+                    re.innerHTML = data.recent_exercises.map(e => `
+                        <div class="weight-entry">
+                            <span class="weight-date">${Utils.formatDate(e.date)}</span>
+                            <span class="weight-value">${Utils.escapeHtml(e.name)}${e.reps?` — ${e.reps} reps`:''}${(e.weight||e.weight===0)?` @ ${e.weight}kg`:''}</span>
+                            <span class="weight-change ${e.volume? 'down':''}">${e.volume? (e.volume.toFixed? e.volume.toFixed(1) : e.volume) + ' vol' : ''}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.warn('loadRecent failed', e);
+            }
         }
 
         function exportData() {
@@ -301,31 +308,7 @@
             }
         }
 
-        // Weight form handler
-        document.getElementById('weightForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
-            const weightData = {
-                date: formData.get('date'),
-                weight: parseFloat(formData.get('weight')),
-                notes: formData.get('notes')
-            };
-
-            try {
-                // In a real app, this would save to the database
-                console.log('Saving weight data:', weightData);
-                alert('Misurazione salvata con successo!');
-                closeModal('weightModal');
-                e.target.reset();
-                
-                // Refresh weight history (mock)
-                // loadWeightHistory();
-                
-            } catch (error) {
-                alert('Errore nel salvare la misurazione: ' + error.message);
-            }
-        });
+        // Weight form mock removed
 
         // Close modal when clicking outside
         document.addEventListener('click', (e) => {
@@ -333,6 +316,13 @@
                 closeModal(e.target.id);
             }
         });
+
+        (async function init() {
+            await loadStats();
+            await updateChart();
+            await loadRecent();
+            await loadStrengthProgress();
+        })();
 
         // Add styles for new components
         const style = document.createElement('style');
