@@ -32,7 +32,7 @@
 
 /* Professional color scheme for trainer stats */
 .trainer-stats .stat-card:nth-child(1) {
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%); /* emerald */
   color: white;
 }
 
@@ -42,7 +42,7 @@
 }
 
 .trainer-stats .stat-card:nth-child(3) {
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* darker emerald */
   color: white;
 }
 
@@ -58,14 +58,14 @@
 }
 
 .trainer-nav .nav-card:hover {
-  border-left-color: #667eea;
+  border-left-color: #10b981; /* emerald */
   transform: translateX(4px);
 }
 
 .trainer-nav .nav-card.primary {
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%); /* emerald */
   color: white;
-  border-left-color: #3498db;
+  border-left-color: #059669;
 }
 
 /* Attention Section */
@@ -192,7 +192,7 @@
 }
 
 .client-card.active {
-  border-left-color: #28a745;
+  border-left-color: #10b981; /* emerald */
 }
 
 .client-card.inactive {
@@ -271,7 +271,7 @@
 .client-stat h4 {
   font-size: 1.2rem;
   margin: 0 0 4px 0;
-  color: #667eea;
+  color: #10b981; /* emerald */
   font-weight: 600;
 }
 
@@ -434,15 +434,15 @@
 }
 
 .pagination button:hover:not(:disabled) {
-  background: #667eea;
+  background: #10b981; /* emerald */
   color: white;
-  border-color: #667eea;
+  border-color: #10b981;
 }
 
 .pagination button.active {
-  background: #667eea;
+  background: #10b981; /* emerald */
   color: white;
-  border-color: #667eea;
+  border-color: #10b981;
 }
 
 .pagination button:disabled {

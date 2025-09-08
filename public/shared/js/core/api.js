@@ -1,6 +1,6 @@
 // GymTracker API Client
 class GymAPI {
-  static baseURL = window.location.origin + '/gymtracker/api';
+  static baseURL = window.location.origin + '/api';
   
   // Get auth token from localStorage
   static getToken() {
