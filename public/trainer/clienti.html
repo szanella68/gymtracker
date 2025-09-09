@@ -35,6 +35,45 @@
       text-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
     }
 
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25);
+      border: 2px solid transparent;
+    }
+
+    .back-btn:hover {
+      background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(107, 114, 128, 0.35);
+      text-decoration: none;
+      color: white;
+    }
+
+    .back-btn:active {
+      transform: translateY(0px);
+      box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+    }
+
+    .back-icon {
+      font-size: 16px;
+      font-weight: bold;
+      transition: transform 0.3s ease;
+    }
+
+    .back-btn:hover .back-icon {
+      transform: translateX(-2px);
+    }
+
     /* Card principale modernizzata */
     .client-selection-card {
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
@@ -167,7 +206,7 @@
 
     .action-btn {
       flex: 1;
-      min-width: 200px;
+      min-width: 180px;
       padding: 16px 24px;
       font-size: 16px;
       font-weight: 600;
@@ -220,6 +259,18 @@
       background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       transform: translateY(-3px);
       box-shadow: 0 12px 28px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-profilo {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-profilo:hover {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(245, 158, 11, 0.4);
     }
 
     .btn-icon {
@@ -304,7 +355,10 @@
   <main class="clients-container">
     <div class="clients-header">
       <h1>👤 Gestione Clienti</h1>
-      <a href="trainer/dashboard.html" class="btn-secondary">← Torna alla Dashboard</a>
+      <a href="trainer/dashboard.html" class="back-btn">
+        <span class="back-icon">←</span>
+        Torna alla Dashboard
+      </a>
     </div>
     
     <div class="client-selection-card">
@@ -335,6 +389,10 @@
           <button class="action-btn btn-calendario" onclick="openCalendario()">
             <span class="btn-icon">📅</span>
             Pianifica Calendario
+          </button>
+          <button class="action-btn btn-profilo" onclick="openProfilo()">
+            <span class="btn-icon">👤</span>
+            Visualizza Profilo
           </button>
         </div>
       </div>
@@ -410,7 +468,7 @@
       if (select.value) {
         const selectedText = select.options[select.selectedIndex].text.replace('👤 ', '');
         hint.innerHTML = `Cliente selezionato: <strong>${selectedText}</strong><br>
-          Ora puoi procedere con la gestione delle schede di allenamento o la pianificazione del calendario.`;
+          Ora puoi procedere con la gestione delle schede di allenamento, pianificazione del calendario o visualizzazione del profilo.`;
         hint.style.borderLeftColor = '#10b981';
       } else {
         hint.innerHTML = 'Seleziona un cliente per procedere con la gestione dettagliata delle schede di allenamento, pianificazione calendario e monitoraggio scadenze.';
@@ -436,6 +494,16 @@
         return;
       }
       window.location.href = `trainer/calendario.html?user_id=${encodeURIComponent(id)}`; 
+    }
+    
+    function openProfilo() { 
+      const id = document.getElementById('clientSelect').value; 
+      if (!id) {
+        alert('⚠️ Seleziona prima un cliente dalla lista');
+        document.getElementById('clientSelect').focus();
+        return;
+      }
+      window.location.href = `trainer/profilo.html?user_id=${encodeURIComponent(id)}`; 
     }
     
     // Event listener per aggiornare il hint quando cambia selezione
