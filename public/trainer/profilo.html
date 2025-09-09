@@ -1,0 +1,915 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymTracker - Gestione Profili</title>
+  <base href="/gymtracker/">
+  <link rel="stylesheet" href="shared/css/shared.css">
+  <link rel="stylesheet" href="trainer/css/trainer.css">
+  <style>
+    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+
+    /* Stili moderni per la sezione clienti */
+    .client-selector-panel {
+      width: 320px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      min-height: 500px;
+    }
+
+    .panel-header {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: #374151;
+      padding: 20px;
+      border-bottom: 3px solid #10b981;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .panel-icon {
+      font-size: 1.5rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .panel-title h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .modern-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .modern-select:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .modern-select:hover {
+      border-color: #cbd5e1;
+    }
+
+    .client-selection-section {
+      padding: 24px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .modern-label {
+      display: block;
+    }
+
+    .label-text {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .primary-select {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+    }
+
+    .primary-select:focus {
+      border-color: #059669;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .client-info-section {
+      padding: 24px;
+      background: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
+      flex: 1;
+      text-align: center;
+    }
+
+    .client-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+      font-weight: bold;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .client-name {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    .client-email {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .client-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .client-status.active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .client-status.inactive {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    /* Sezione profilo */
+    .profile-section {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+
+    .profile-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 16px 20px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-icon {
+      font-size: 1.3rem;
+    }
+
+    .profile-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .profile-content {
+      padding: 24px;
+    }
+
+    /* Tab system */
+    .profile-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .profile-tab {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      color: #6b7280;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+
+    .profile-tab:hover {
+      background: #f1f5f9;
+      color: #374151;
+    }
+
+    .profile-tab.active {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Form styling */
+    .profile-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .card-header-profile {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .card-header-profile h4 {
+      margin: 0;
+      color: #374151;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn-save {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-save:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-save:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-reset {
+      background: #6b7280;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-reset:hover {
+      background: #4b5563;
+    }
+
+    .success-message {
+      background: #dcfce7;
+      color: #166534;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border-left: 4px solid #10b981;
+    }
+
+    .error-message {
+      background: #fef2f2;
+      color: #dc2626;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border-left: 4px solid #ef4444;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      
+      .client-selector-panel {
+        width: 100%;
+        min-height: auto;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .profile-tabs {
+        flex-direction: column;
+      }
+      
+      .form-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div data-include="shared/partials/header.html"></div>
+  <main class="trainer-dashboard">
+    <div class="dashboard-header">
+      <h1>👤 Gestione Profili Clienti</h1>
+      <div class="trainer-actions">
+        <button class="btn-secondary" onclick="window.location.href='trainer/dashboard.html'">← Torna alla Dashboard</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="client-selector-panel">
+        <!-- Header della sezione clienti -->
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">👥</span>
+            <h3>Selezione Cliente</h3>
+          </div>
+          <select id="filterActive" class="modern-select" onchange="loadClients()">
+            <option value="all">Tutti i clienti</option>
+            <option value="true" selected>Solo attivi</option>
+            <option value="false">Solo disattivati</option>
+          </select>
+        </div>
+
+        <!-- Selezione cliente -->
+        <div class="client-selection-section">
+          <label class="modern-label">
+            <span class="label-text">Cliente da modificare</span>
+            <select id="clientSelect" class="modern-select primary-select" onchange="onClientChange()">
+              <option value="">-- Seleziona un cliente --</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Info cliente selezionato -->
+        <div class="client-info-section">
+          <div id="clientInfo">
+            <div class="empty-state">
+              <div class="empty-icon">👤</div>
+              <p>Seleziona un cliente per visualizzarne e modificarne il profilo</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="profile-section">
+        <div class="profile-header">
+          <span class="profile-icon">📝</span>
+          <h3>Modifica Profilo Cliente</h3>
+        </div>
+        
+        <div class="profile-content">
+          <div id="profileContainer">
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <h3>Nessun cliente selezionato</h3>
+              <p>Seleziona un cliente dalla lista per iniziare a modificare il suo profilo.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="shared/js/core/api.js"></script>
+  <script src="shared/js/include.js"></script>
+  <script src="shared/js/core/utils.js"></script>
+  <script>
+    // Auth check
+    async function checkTrainerAccess() {
+      const token = GymAPI.getToken();
+      if (!token) {
+        window.location.href = '/gymtracker/utente/';
+        return false;
+      }
+      try {
+        const me = await GymAPI.getCurrentUser();
+        const role = (me?.profile?.user_type || me?.user_type || '').toString().toLowerCase();
+        if (role !== 'admin') {
+          alert('Accesso riservato ai trainer');
+          window.location.href = '/gymtracker/utente/dashboard.html';
+          return false;
+        }
+        return true;
+      } catch (e) {
+        GymAPI.removeToken();
+        window.location.href = '/gymtracker/utente/';
+        return false;
+      }
+    }
+
+    let currentClient = null;
+    let currentClientProfile = null;
+    let clientsData = [];
+    let activeTab = 'personal';
+
+    async function loadClients() {
+      const active = document.getElementById('filterActive').value;
+      const select = document.getElementById('clientSelect');
+      
+      select.innerHTML = '<option value="">🔄 Caricamento...</option>';
+      select.disabled = true;
+      
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/clients?active=${active}`, { 
+          headers: { Authorization: 'Bearer ' + t }
+        });
+        const data = await r.json();
+        clientsData = data.clients || [];
+        
+        select.innerHTML = '<option value="">-- Seleziona un cliente --</option>' + 
+          clientsData.map(c => `<option value="${c.id}">👤 ${Utils.escapeHtml(c.full_name || c.email || 'Cliente')}</option>`).join('');
+        
+        // Pre-selezione da query ?user_id=...
+        const q = new URLSearchParams(window.location.search);
+        const qUser = q.get('user_id');
+        if (qUser && clientsData.some(c => c.id === qUser)) {
+          select.value = qUser;
+          onClientChange();
+        }
+        
+      } catch (error) {
+        console.error('Errore caricamento clienti:', error);
+        select.innerHTML = '<option value="">❌ Errore nel caricamento</option>';
+      } finally {
+        select.disabled = false;
+      }
+    }
+
+    async function onClientChange() {
+      const sel = document.getElementById('clientSelect');
+      const id = sel.value;
+      
+      if (!id) {
+        currentClient = null;
+        currentClientProfile = null;
+        showEmptyClientInfo();
+        showEmptyProfile();
+        return;
+      }
+      
+      currentClient = clientsData.find(c => c.id === id) || null;
+      if (!currentClient) return;
+      
+      // Mostra info cliente
+      showClientInfo(currentClient);
+      
+      // Il client data da trainer/clients contiene già i dati del profilo
+      // Usa direttamente questi dati invece di fare una seconda chiamata
+      currentClientProfile = currentClient;
+      renderProfileForm();
+    }
+
+    function showEmptyClientInfo() {
+      document.getElementById('clientInfo').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">👤</div>
+          <p>Seleziona un cliente per visualizzarne le informazioni</p>
+        </div>
+      `;
+    }
+
+    function showClientInfo(client) {
+      const firstLetter = (client.full_name || client.email || 'U').charAt(0).toUpperCase();
+      const statusClass = client.utente_attivo ? 'active' : 'inactive';
+      const statusText = client.utente_attivo ? 'Attivo' : 'Disattivato';
+      
+      document.getElementById('clientInfo').innerHTML = `
+        <div class="client-avatar">${firstLetter}</div>
+        <div class="client-name">${Utils.escapeHtml(client.full_name || 'Senza nome')}</div>
+        <div class="client-email">${Utils.escapeHtml(client.email || '')}</div>
+        <div class="client-status ${statusClass}">
+          ${statusClass === 'active' ? '✓' : '✕'} ${statusText}
+        </div>
+      `;
+    }
+
+    function showEmptyProfile() {
+      document.getElementById('profileContainer').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <h3>Nessun cliente selezionato</h3>
+          <p>Seleziona un cliente dalla lista per iniziare a modificare il suo profilo.</p>
+        </div>
+      `;
+    }
+
+    function renderProfileForm() {
+      if (!currentClientProfile) return;
+      
+      // I dati arrivano direttamente dall'endpoint trainer/clients
+      const profile = currentClientProfile;
+      
+      const container = document.getElementById('profileContainer');
+      container.innerHTML = `
+        <div id="messageContainer"></div>
+        
+        <div class="profile-tabs">
+          <button class="profile-tab ${activeTab === 'personal' ? 'active' : ''}" onclick="showTab('personal')">
+            Informazioni Personali
+          </button>
+          <button class="profile-tab ${activeTab === 'fitness' ? 'active' : ''}" onclick="showTab('fitness')">
+            Obiettivi Fitness
+          </button>
+        </div>
+        
+        <!-- Personal Information Tab -->
+        <div id="personalTab" class="tab-content ${activeTab === 'personal' ? 'active' : ''}">
+          <div class="profile-card">
+            <div class="card-header-profile">
+              <h4>Informazioni Personali</h4>
+            </div>
+            <div class="card-body">
+              <form id="personalForm">
+                <div class="form-group">
+                  <label for="fullName">Nome completo *</label>
+                  <input type="text" id="fullName" name="full_name" value="${Utils.escapeHtml(profile.full_name || '')}" required>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="phone">Telefono</label>
+                    <input type="tel" id="phone" name="phone" value="${Utils.escapeHtml(profile.phone || '')}">
+                  </div>
+                  <div class="form-group">
+                    <label for="dateOfBirth">Data di nascita</label>
+                    <input type="date" id="dateOfBirth" name="date_of_birth" value="${profile.date_of_birth || ''}">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="gender">Genere</label>
+                    <select id="gender" name="gender">
+                      <option value="">Seleziona</option>
+                      <option value="male" ${profile.gender === 'male' ? 'selected' : ''}>Maschio</option>
+                      <option value="female" ${profile.gender === 'female' ? 'selected' : ''}>Femmina</option>
+                      <option value="other" ${profile.gender === 'other' ? 'selected' : ''}>Altro</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="emergencyContact">Contatto di emergenza</label>
+                    <input type="text" id="emergencyContact" name="emergency_contact" 
+                           value="${Utils.escapeHtml(profile.emergency_contact || '')}" 
+                           placeholder="Nome e telefono">
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn-save">💾 Salva Informazioni</button>
+                  <button type="button" class="btn-reset" onclick="resetPersonalForm()">🔄 Ripristina</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Fitness Goals Tab -->
+        <div id="fitnessTab" class="tab-content ${activeTab === 'fitness' ? 'active' : ''}">
+          <div class="profile-card">
+            <div class="card-header-profile">
+              <h4>Obiettivi e Informazioni Fitness</h4>
+            </div>
+            <div class="card-body">
+              <form id="fitnessForm">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="height">Altezza (cm)</label>
+                    <input type="number" id="height" name="height_cm" min="100" max="250" 
+                           value="${profile.height_cm || ''}">
+                  </div>
+                  <div class="form-group">
+                    <label for="weight">Peso (kg)</label>
+                    <input type="number" id="weight" name="weight_kg" min="30" max="200" step="0.1" 
+                           value="${profile.weight_kg || ''}">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="experienceLevel">Livello di esperienza</label>
+                  <select id="experienceLevel" name="experience_level">
+                    <option value="">Seleziona</option>
+                    <option value="beginner" ${profile.experience_level === 'beginner' ? 'selected' : ''}>Principiante</option>
+                    <option value="intermediate" ${profile.experience_level === 'intermediate' ? 'selected' : ''}>Intermedio</option>
+                    <option value="advanced" ${profile.experience_level === 'advanced' ? 'selected' : ''}>Avanzato</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="fitnessGoal">Obiettivo principale</label>
+                  <textarea id="fitnessGoal" name="fitness_goal" placeholder="Obiettivi fitness del cliente...">${Utils.escapeHtml(profile.fitness_goal || '')}</textarea>
+                </div>
+                <div class="form-group">
+                  <label for="medicalNotes">Note mediche</label>
+                  <textarea id="medicalNotes" name="medical_notes" placeholder="Condizioni mediche, limitazioni, note importanti...">${Utils.escapeHtml(profile.medical_notes || '')}</textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn-save">💾 Salva Obiettivi</button>
+                  <button type="button" class="btn-reset" onclick="resetFitnessForm()">🔄 Ripristina</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Bind form handlers
+      bindFormHandlers();
+    }
+
+    function showTab(tabName) {
+      activeTab = tabName;
+      
+      // Update tab buttons
+      document.querySelectorAll('.profile-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelector(`.profile-tab[onclick="showTab('${tabName}')"]`).classList.add('active');
+      
+      // Update tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(tabName + 'Tab').classList.add('active');
+      
+      // Clear messages
+      clearMessages();
+    }
+
+    function bindFormHandlers() {
+      // Personal form
+      document.getElementById('personalForm').addEventListener('submit', handlePersonalSubmit);
+      
+      // Fitness form
+      document.getElementById('fitnessForm').addEventListener('submit', handleFitnessSubmit);
+    }
+
+    async function handlePersonalSubmit(e) {
+      e.preventDefault();
+      
+      if (!currentClient) return;
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const form = e.target;
+      
+      const fields = ['full_name', 'phone', 'date_of_birth', 'gender', 'emergency_contact'];
+      const updateData = {};
+      
+      fields.forEach(name => {
+        const el = form.elements[name];
+        if (!el) return;
+        const val = (el.value || '').trim();
+        updateData[name] = val === '' ? null : val;
+      });
+      
+      clearMessages();
+      setButtonLoading(submitBtn, true);
+      
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/clients/${encodeURIComponent(currentClient.id)}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json', 
+            Authorization: 'Bearer ' + t 
+          },
+          body: JSON.stringify(updateData)
+        });
+        
+        if (!r.ok) {
+          const errorData = await r.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Errore nel salvataggio');
+        }
+        
+        showMessage('✅ Informazioni personali aggiornate con successo!', 'success');
+        
+        // Aggiorna il profilo locale con i nuovi dati
+        Object.assign(currentClientProfile, updateData);
+        
+        // Ricarica la lista clienti per aggiornare le info nella sidebar
+        await loadClients();
+        const select = document.getElementById('clientSelect');
+        select.value = currentClient.id;
+        
+      } catch (error) {
+        console.error('Errore salvataggio profilo personale:', error);
+        showMessage('❌ ' + (error.message || 'Errore nel salvataggio delle informazioni personali'), 'error');
+      } finally {
+        setButtonLoading(submitBtn, false);
+      }
+    }
+
+    async function handleFitnessSubmit(e) {
+      e.preventDefault();
+      
+      if (!currentClient) return;
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const form = e.target;
+      
+      const fields = ['height_cm', 'weight_kg', 'experience_level', 'fitness_goal', 'medical_notes'];
+      const updateData = {};
+      
+      fields.forEach(name => {
+        const el = form.elements[name];
+        if (!el) return;
+        let val = (el.value || '').trim();
+        
+        if (val === '') {
+          updateData[name] = null;
+        } else if (name === 'height_cm') {
+          updateData[name] = parseInt(val, 10);
+        } else if (name === 'weight_kg') {
+          updateData[name] = parseFloat(val);
+        } else {
+          updateData[name] = val;
+        }
+      });
+      
+      clearMessages();
+      setButtonLoading(submitBtn, true);
+      
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/clients/${encodeURIComponent(currentClient.id)}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json', 
+            Authorization: 'Bearer ' + t 
+          },
+          body: JSON.stringify(updateData)
+        });
+        
+        if (!r.ok) {
+          const errorData = await r.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Errore nel salvataggio');
+        }
+        
+        showMessage('✅ Obiettivi fitness aggiornati con successo!', 'success');
+        
+        // Aggiorna il profilo locale con i nuovi dati
+        Object.assign(currentClientProfile, updateData);
+        
+      } catch (error) {
+        console.error('Errore salvataggio obiettivi fitness:', error);
+        showMessage('❌ ' + (error.message || 'Errore nel salvataggio degli obiettivi fitness'), 'error');
+      } finally {
+        setButtonLoading(submitBtn, false);
+      }
+    }
+
+    function resetPersonalForm() {
+      if (!currentClientProfile) return;
+      const profile = currentClientProfile;
+      
+      document.getElementById('fullName').value = profile.full_name || '';
+      document.getElementById('phone').value = profile.phone || '';
+      document.getElementById('dateOfBirth').value = profile.date_of_birth || '';
+      document.getElementById('gender').value = profile.gender || '';
+      document.getElementById('emergencyContact').value = profile.emergency_contact || '';
+      
+      clearMessages();
+    }
+
+    function resetFitnessForm() {
+      if (!currentClientProfile) return;
+      const profile = currentClientProfile;
+      
+      document.getElementById('height').value = profile.height_cm || '';
+      document.getElementById('weight').value = profile.weight_kg || '';
+      document.getElementById('experienceLevel').value = profile.experience_level || '';
+      document.getElementById('fitnessGoal').value = profile.fitness_goal || '';
+      document.getElementById('medicalNotes').value = profile.medical_notes || '';
+      
+      clearMessages();
+    }
+
+    function showMessage(message, type) {
+      const container = document.getElementById('messageContainer');
+      const className = type === 'success' ? 'success-message' : 'error-message';
+      
+      container.innerHTML = `<div class="${className}">${message}</div>`;
+      
+      // Auto-remove success messages after 5 seconds
+      if (type === 'success') {
+        setTimeout(() => {
+          if (container.innerHTML.includes(message)) {
+            container.innerHTML = '';
+          }
+        }, 5000);
+      }
+    }
+
+    function clearMessages() {
+      const container = document.getElementById('messageContainer');
+      if (container) container.innerHTML = '';
+    }
+
+    function setButtonLoading(button, isLoading) {
+      if (isLoading) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent;
+        button.textContent = '⏳ Salvando...';
+      } else {
+        button.disabled = false;
+        button.textContent = button.dataset.originalText || button.textContent;
+      }
+    }
+
+    // Inizializzazione
+    (async function init() {
+      if (!await checkTrainerAccess()) return;
+      await loadClients();
+    })();
+  </script>
+</body>
+</html>

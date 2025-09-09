@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymTracker - Le Mie Schede</title>
+  <base href="/gymtracker/">
+  <link rel="stylesheet" href="shared/css/shared.css">
+  <link rel="stylesheet" href="utente/css/utente.css">
+  <style>
+    .layout { 
+      display: grid; 
+      grid-template-columns: 1fr; 
+      gap: 20px; 
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Header principale */
+    .user-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .user-header h1 {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25);
+    }
+
+    .back-btn:hover {
+      background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(107, 114, 128, 0.35);
+      text-decoration: none;
+      color: white;
+    }
+
+    .back-icon {
+      font-size: 16px;
+      transition: transform 0.3s ease;
+    }
+
+    .back-btn:hover .back-icon {
+      transform: translateX(-2px);
+    }
+
+    /* Sezione schede */
+    .plans-section {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .plans-section:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12), 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .section-header {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: #374151;
+      padding: 24px;
+      border-bottom: 3px solid #10b981;
+      position: relative;
+    }
+
+    .section-header::before {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%);
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .section-icon {
+      font-size: 1.5rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .header-content h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .section-content {
+      padding: 32px;
+    }
+
+    /* Lista schede */
+    .plans-list {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .plan-card {
+      background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%);
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .plan-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%);
+    }
+
+    .plan-card.active::before {
+      background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+    }
+
+    .plan-card:hover {
+      transform: translateY(-2px);
+      border-color: #cbd5e1;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .plan-card.active {
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+      border-color: #10b981;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+    }
+
+    .plan-card.active::after {
+      content: '✓';
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: #10b981;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .plan-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .plan-info {
+      flex: 1;
+    }
+
+    .plan-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #374151;
+      margin: 0 0 8px 0;
+    }
+
+    .plan-description {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .plan-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .status-badge {
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge.active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-badge.inactive {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    /* Dettaglio scheda */
+    .plan-detail {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 2px solid #f1f5f9;
+      display: none;
+    }
+
+    .plan-detail.active {
+      display: block;
+    }
+
+    .detail-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border-left: 4px solid #10b981;
+    }
+
+    .detail-header h3 {
+      margin: 0;
+      color: #374151;
+      font-size: 1.2rem;
+    }
+
+    .sessions-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .session-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .session-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .session-title {
+      font-weight: 600;
+      color: #374151;
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .exercises-list {
+      padding: 20px;
+    }
+
+    .exercise-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .exercise-item:last-child {
+      border-bottom: none;
+    }
+
+    .exercise-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .exercise-info {
+      flex: 1;
+    }
+
+    .exercise-name {
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    .exercise-params {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .param {
+      font-size: 12px;
+      color: #64748b;
+      background: #f8fafc;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .exercise-link {
+      color: #10b981;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .exercise-link:hover {
+      color: #059669;
+      text-decoration: underline;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #10b981;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .layout {
+        padding: 16px;
+      }
+      
+      .user-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+      
+      .user-header h1 {
+        font-size: 1.5rem;
+      }
+      
+      .section-content {
+        padding: 20px;
+      }
+      
+      .plan-card {
+        padding: 16px;
+      }
+      
+      .plan-meta {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .exercise-params {
+        flex-direction: column;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <div class="user-header">
+      <h1>📋 Le Mie Schede Allenamento</h1>
+      <a href="utente/dashboard.html" class="back-btn">
+        <span class="back-icon">←</span>
+        Torna alla Dashboard
+      </a>
+    </div>
+    
+    <div class="plans-section">
+      <div class="section-header">
+        <div class="header-content">
+          <span class="section-icon">🏋️</span>
+          <h2>I Miei Programmi di Allenamento</h2>
+        </div>
+      </div>
+      
+      <div class="section-content">
+        <div id="plansContainer">
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Caricamento delle tue schede di allenamento...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="shared/js/core/api.js"></script>
+  <script src="shared/js/core/utils.js"></script>
+  <script>
+    // Auth check
+    if (!GymAPI.isAuthenticated()) {
+      window.location.href = '/gymtracker/utente/';
+    }
+
+    let userPlans = [];
+    let currentDetailPlan = null;
+
+    async function loadUserPlans() {
+      try {
+        console.log('[Schede] Caricamento schede utente...');
+        
+        // Per ora uso l'endpoint trainer con user_id corrente
+        // TODO: Implementare endpoint dedicato /api/users/me/plans
+        const currentUser = await GymAPI.getCurrentUser();
+        const response = await GymAPI.get(`/trainer/plans?user_id=${currentUser.id}`);
+        
+        userPlans = response.plans || [];
+        console.log('[Schede] Caricate', userPlans.length, 'schede');
+        
+        renderPlans();
+        
+      } catch (error) {
+        console.error('[Schede] Errore caricamento:', error);
+        showError('Errore nel caricamento delle schede. Riprova più tardi.');
+      }
+    }
+
+    function renderPlans() {
+      const container = document.getElementById('plansContainer');
+      
+      if (!userPlans.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3>Nessuna scheda assegnata</h3>
+            <p>Il tuo trainer non ti ha ancora assegnato alcuna scheda di allenamento.</p>
+            <p>Contatta il tuo trainer per iniziare il tuo percorso fitness!</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Ordina: scheda attiva prima, poi per data di creazione
+      const sortedPlans = [...userPlans].sort((a, b) => {
+        if (a.attiva && !b.attiva) return -1;
+        if (!a.attiva && b.attiva) return 1;
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      });
+
+      const plansListHTML = sortedPlans.map(plan => `
+        <div class="plan-card ${plan.attiva ? 'active' : ''}" onclick="togglePlanDetail('${plan.id}')">
+          <div class="plan-header">
+            <div class="plan-info">
+              <h3 class="plan-title">${Utils.escapeHtml(plan.titolo || 'Scheda Allenamento')}</h3>
+              ${plan.descrizione ? `<p class="plan-description">${Utils.escapeHtml(plan.descrizione)}</p>` : ''}
+              <div class="plan-meta">
+                ${plan.autore ? `<div class="meta-item">👨‍🏫 ${Utils.escapeHtml(plan.autore)}</div>` : ''}
+                ${plan.durata_settimane ? `<div class="meta-item">📅 ${plan.durata_settimane} settimane</div>` : ''}
+                ${plan.sessioni_settimana ? `<div class="meta-item">🔄 ${plan.sessioni_settimana}/settimana</div>` : ''}
+              </div>
+            </div>
+            <div class="status-badge ${plan.attiva ? 'active' : 'inactive'}">
+              ${plan.attiva ? 'Attiva' : 'Archiviata'}
+            </div>
+          </div>
+        </div>
+        <div id="detail-${plan.id}" class="plan-detail">
+          <div class="detail-header">
+            <h3>📋 Dettagli Programma: ${Utils.escapeHtml(plan.titolo || 'Scheda Allenamento')}</h3>
+          </div>
+          <div id="sessions-${plan.id}" class="sessions-grid">
+            <div class="loading-state">
+              <div class="loading-spinner"></div>
+              <p>Caricamento sessioni...</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `<div class="plans-list">${plansListHTML}</div>`;
+    }
+
+    async function togglePlanDetail(planId) {
+      const detailElement = document.getElementById(`detail-${planId}`);
+      const wasActive = detailElement.classList.contains('active');
+      
+      // Chiudi tutti i dettagli aperti
+      document.querySelectorAll('.plan-detail.active').forEach(el => {
+        el.classList.remove('active');
+      });
+      
+      if (wasActive) {
+        currentDetailPlan = null;
+        return;
+      }
+      
+      // Apri il dettaglio selezionato
+      detailElement.classList.add('active');
+      currentDetailPlan = planId;
+      
+      // Carica le sessioni se non già caricate
+      if (!detailElement.dataset.loaded) {
+        await loadPlanSessions(planId);
+      }
+    }
+
+    async function loadPlanSessions(planId) {
+      try {
+        console.log('[Schede] Caricamento sessioni per piano', planId);
+        
+        const response = await GymAPI.get(`/trainer/plans/${planId}`);
+        const { sessions, exercises } = response;
+        
+        const sessionsContainer = document.getElementById(`sessions-${planId}`);
+        const detailElement = document.getElementById(`detail-${planId}`);
+        
+        if (!sessions || !sessions.length) {
+          sessionsContainer.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🏋️</div>
+              <h4>Nessuna sessione configurata</h4>
+              <p>Questa scheda non ha ancora sessioni di allenamento.</p>
+            </div>
+          `;
+          detailElement.dataset.loaded = 'true';
+          return;
+        }
+
+        // Organizza esercizi per sessione
+        const exercisesBySession = {};
+        (exercises || []).forEach(ex => {
+          if (!exercisesBySession[ex.sessione_id]) {
+            exercisesBySession[ex.sessione_id] = [];
+          }
+          exercisesBySession[ex.sessione_id].push(ex);
+        });
+
+        const sessionsHTML = sessions.map((session, index) => {
+          const sessionExercises = exercisesBySession[session.id] || [];
+          
+          return `
+            <div class="session-card">
+              <div class="session-header">
+                <h4 class="session-title">${Utils.escapeHtml(session.nome || `Sessione ${index + 1}`)}</h4>
+              </div>
+              <div class="exercises-list">
+                ${sessionExercises.length ? sessionExercises.map((exercise, exIndex) => `
+                  <div class="exercise-item">
+                    <div class="exercise-icon">${exIndex + 1}</div>
+                    <div class="exercise-info">
+                      <div class="exercise-name">${Utils.escapeHtml(exercise.name || 'Esercizio')}</div>
+                      <div class="exercise-params">
+                        ${exercise.sets_count ? `<span class="param">🔄 ${exercise.sets_count} serie</span>` : ''}
+                        ${exercise.reps_min && exercise.reps_max ? `<span class="param">🔢 ${exercise.reps_min}-${exercise.reps_max} rip</span>` : ''}
+                        ${exercise.weight_suggested ? `<span class="param">⚖️ ${exercise.weight_suggested}kg</span>` : ''}
+                        ${exercise.rest_seconds ? `<span class="param">⏱️ ${exercise.rest_seconds}s pausa</span>` : ''}
+                        ${exercise.intensity ? `<span class="param">🔥 Intensità ${exercise.intensity}/10</span>` : ''}
+                      </div>
+                      ${exercise.external_url ? `<a href="${exercise.external_url}" target="_blank" class="exercise-link">🔗 Guarda video tutorial</a>` : ''}
+                    </div>
+                  </div>
+                `).join('') : `
+                  <div class="empty-state" style="padding: 20px;">
+                    <p>Nessun esercizio configurato per questa sessione.</p>
+                  </div>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        sessionsContainer.innerHTML = sessionsHTML;
+        detailElement.dataset.loaded = 'true';
+        
+      } catch (error) {
+        console.error('[Schede] Errore caricamento sessioni:', error);
+        const sessionsContainer = document.getElementById(`sessions-${planId}`);
+        sessionsContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚠️</div>
+            <h4>Errore nel caricamento</h4>
+            <p>Impossibile caricare i dettagli della sessione.</p>
+          </div>
+        `;
+      }
+    }
+
+    function showError(message) {
+      const container = document.getElementById('plansContainer');
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <h3>Errore di caricamento</h3>
+          <p>${message}</p>
+          <button class="btn-primary" onclick="loadUserPlans()" style="margin-top: 16px;">Riprova</button>
+        </div>
+      `;
+    }
+
+    // Inizializzazione
+    (async function init() {
+      try {
+        await loadUserPlans();
+      } catch (error) {
+        console.error('[Schede] Errore inizializzazione:', error);
+        showError('Errore durante l\'inizializzazione della pagina.');
+      }
+    })();
+  </script>
+</body>
+</html>
