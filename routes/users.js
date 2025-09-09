@@ -301,6 +301,57 @@ router.get('/me/stats', authenticateToken, async (req, res) => {
   }
 });
 
+// User plans: list my plans
+router.get('/me/plans', authenticateToken, async (req, res) => {
+  try {
+    const supabaseId = req.user.supabase_id || req.user.id;
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+    const authHeader = req.headers['authorization'] || '';
+    const url = `${SUPABASE_URL}/rest/v1/schede?user_id=eq.${encodeURIComponent(supabaseId)}&select=*&order=created_at.desc`;
+    const r = await fetch(url, { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': authHeader } });
+    const data = await r.json();
+    if (!r.ok) return res.status(500).json({ error: 'Failed to fetch plans', details: data });
+    res.json({ plans: Array.isArray(data) ? data : [] });
+  } catch (error) {
+    console.error('Get my plans error:', error);
+    res.status(500).json({ error: 'Failed to fetch plans' });
+  }
+});
+
+// User plans: plan details (plan + sessions + exercises) scoped to me
+router.get('/me/plans/:id', authenticateToken, async (req, res) => {
+  try {
+    const planId = req.params.id;
+    const supabaseId = req.user.supabase_id || req.user.id;
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': req.headers['authorization'] || '' };
+
+    // Ensure plan belongs to the current user via RLS
+    const pRes = await fetch(`${SUPABASE_URL}/rest/v1/schede?id=eq.${encodeURIComponent(planId)}&user_id=eq.${encodeURIComponent(supabaseId)}&select=*`, { headers });
+    const plans = await pRes.json();
+    if (!pRes.ok || !Array.isArray(plans) || plans.length === 0) return res.status(404).json({ error: 'Plan not found' });
+    const plan = plans[0];
+
+    const sRes = await fetch(`${SUPABASE_URL}/rest/v1/sessioni?scheda_id=eq.${encodeURIComponent(planId)}&select=*`, { headers });
+    const sessions = await sRes.json();
+    if (!sRes.ok) return res.status(500).json({ error: 'Failed to fetch sessions', details: sessions });
+
+    let exercises = [];
+    if (Array.isArray(sessions) && sessions.length) {
+      const ids = sessions.map(s => s.id).map(encodeURIComponent).join(',');
+      const eRes = await fetch(`${SUPABASE_URL}/rest/v1/exercises?sessione_id=in.(${ids})&select=*`, { headers });
+      exercises = await eRes.json();
+    }
+
+    res.json({ plan, sessions: Array.isArray(sessions) ? sessions : [], exercises: Array.isArray(exercises) ? exercises : [] });
+  } catch (error) {
+    console.error('Get my plan details error:', error);
+    res.status(500).json({ error: 'Failed to fetch plan details' });
+  }
+});
+
 // Exercise PRs and progress (last 200 completed workouts)
 router.get('/me/exercises/pr', authenticateToken, async (req, res) => {
   try {

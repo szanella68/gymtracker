@@ -39,9 +39,15 @@ function restUrl(pathWithQuery) {
 router.get('/clients', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const active = (req.query.active || 'all').toLowerCase();
-    let query = 'user_profiles?select=id,email,full_name,utente_attivo,user_type&order=full_name.asc';
-    if (active === 'true') query = 'user_profiles?utente_attivo=eq.true&select=id,email,full_name,utente_attivo,user_type&order=full_name.asc';
-    if (active === 'false') query = 'user_profiles?utente_attivo=eq.false&select=id,email,full_name,utente_attivo,user_type&order=full_name.asc';
+    const selectCols = [
+      'id','email','full_name','utente_attivo','user_type',
+      'phone','date_of_birth','gender','height_cm','weight_kg',
+      'fitness_goal','experience_level','medical_notes','emergency_contact','profile_picture_url',
+      'created_at','updated_at'
+    ].join(',');
+    let query = `user_profiles?select=${selectCols}&order=full_name.asc`;
+    if (active === 'true') query = `user_profiles?utente_attivo=eq.true&select=${selectCols}&order=full_name.asc`;
+    if (active === 'false') query = `user_profiles?utente_attivo=eq.false&select=${selectCols}&order=full_name.asc`;
 
     const r = await fetch(restUrl(query), { headers: srHeaders() });
     const data = await r.json();
@@ -52,13 +58,17 @@ router.get('/clients', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Update client (utente_attivo toggle)
+// Update client profile fields (trainer admin)
 router.put('/clients/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const id = req.params.id;
+    const allowed = [
+      'full_name','phone','date_of_birth','gender','height_cm','weight_kg',
+      'fitness_goal','experience_level','medical_notes','emergency_contact',
+      'utente_attivo','profile_picture_url'
+    ];
     const payload = {};
-    // For now allow only utente_attivo toggle to be safe
-    if (typeof req.body.utente_attivo === 'boolean') payload.utente_attivo = req.body.utente_attivo;
+    allowed.forEach(k => { if (req.body[k] !== undefined) payload[k] = req.body[k]; });
     if (Object.keys(payload).length === 0) return res.status(400).json({ error: 'No fields to update' });
 
     const r = await fetch(restUrl(`user_profiles?id=eq.${encodeURIComponent(id)}`), {

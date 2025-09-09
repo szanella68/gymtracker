@@ -436,20 +436,17 @@
   </style>
 </head>
 <body>
+  <div data-include="shared/partials/header_user.html"></div>
   <main class="layout">
     <div class="user-header">
-      <h1>📋 Le Mie Schede Allenamento</h1>
-      <a href="utente/dashboard.html" class="back-btn">
-        <span class="back-icon">←</span>
-        Torna alla Dashboard
-      </a>
+      <!-- <h1>📋 Le Mie Schede Allenamento</h1> -->
     </div>
     
     <div class="plans-section">
       <div class="section-header">
         <div class="header-content">
           <span class="section-icon">🏋️</span>
-          <h2>I Miei Programmi di Allenamento</h2>
+          <h1>📋I Miei Programmi di Allenamento</h1>
         </div>
       </div>
       
@@ -465,6 +462,7 @@
   </main>
 
   <script src="shared/js/core/api.js"></script>
+  <script src="shared/js/include.js"></script>
   <script src="shared/js/core/utils.js"></script>
   <script>
     // Auth check
@@ -479,10 +477,8 @@
       try {
         console.log('[Schede] Caricamento schede utente...');
         
-        // Per ora uso l'endpoint trainer con user_id corrente
-        // TODO: Implementare endpoint dedicato /api/users/me/plans
-        const currentUser = await GymAPI.getCurrentUser();
-        const response = await GymAPI.get(`/trainer/plans?user_id=${currentUser.id}`);
+        // Usa endpoint dedicato utente
+        const response = await GymAPI.get(`/users/me/plans`);
         
         userPlans = response.plans || [];
         console.log('[Schede] Caricate', userPlans.length, 'schede');
@@ -578,7 +574,7 @@
       try {
         console.log('[Schede] Caricamento sessioni per piano', planId);
         
-        const response = await GymAPI.get(`/trainer/plans/${planId}`);
+        const response = await GymAPI.get(`/users/me/plans/${planId}`);
         const { sessions, exercises } = response;
         
         const sessionsContainer = document.getElementById(`sessions-${planId}`);

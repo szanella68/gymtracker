@@ -354,18 +354,12 @@
   <div data-include="shared/partials/header.html"></div>
   <main class="clients-container">
     <div class="clients-header">
-      <h1>👤 Gestione Clienti</h1>
-      <a href="trainer/dashboard.html" class="back-btn">
-        <span class="back-icon">←</span>
-        Torna alla Dashboard
-      </a>
+      <!--<h1>👤 Gestione Clienti</h1> -->
     </div>
-    
     <div class="client-selection-card">
       <div class="card-header-modern">
         <div class="header-title">
-          <span class="header-icon">👥</span>
-          <h3>Selezione Cliente</h3>
+          <h1>👤 Gestione Clienti</h1>
         </div>
       </div>
       
@@ -419,72 +413,47 @@
     }
     
     async function loadClients() {
-  const select = document.getElementById('clientSelect');
-  select.innerHTML = '<option>Caricamento...</option>';
-  
-  try {
-    const data = await GymAPI.get('/trainer/clients?active=all');
-    const clients = Array.isArray(data.clients) ? data.clients : [];
-    
-    // Clear and populate select
-    select.innerHTML = '<option value="">-- Seleziona cliente --</option>';
-    
-    clients.forEach(client => {
-      const option = document.createElement('option');
-      option.value = client.id;
-      option.textContent = client.full_name 
-        ? `${client.full_name} (${client.email})` 
-        : client.email || 'Cliente senza nome';
-      select.appendChild(option);
-    });
-    
-    // Update hint
-    const hint = document.getElementById('clientHint');
-    if (clients.length === 0) {
-      hint.textContent = 'Nessun cliente trovato.';
-      hint.style.color = '#dc3545';
-    } else {
-      hint.textContent = `${clients.length} cliente${clients.length > 1 ? 'i' : ''} trovato${clients.length > 1 ? 'i' : ''}. Seleziona un cliente per procedere.`;
-      hint.style.color = '#6c757d';
+      const select = document.getElementById('clientSelect');
+      const card = document.querySelector('.client-selection-card');
+      
+      // Stato di caricamento
+      select.innerHTML = '<option>🔄 Caricamento clienti...</option>';
+      select.disabled = true;
+      card.classList.add('loading-state');
+      
+      try {
+        const data = await GymAPI.get('/trainer/clients?active=all');
+        const clients = Array.isArray(data.clients) ? data.clients : [];
+        
+        if (!clients.length) { 
+          select.innerHTML = '<option>❌ Nessun cliente disponibile</option>';
+          return; 
+        }
+        
+        // Popola la select con i clienti
+        select.innerHTML = '<option value="">-- Seleziona un cliente --</option>' + 
+          clients.map(c => `<option value="${c.id}">👤 ${Utils.escapeHtml(c.full_name || c.email || 'Cliente')}</option>`).join('');
+        
+        // Preseleziona "Stefano Nidec" se presente
+        const pref = clients.find(c => /stefano\s+nidec/i.test((c.full_name||'') + ' ' + (c.email||'')));
+        if (pref) select.value = pref.id;
+        
+        // Oppure da query ?user_id=...
+        const q = new URLSearchParams(location.search);
+        const qUser = q.get('user_id');
+        if (qUser && clients.some(c => c.id === qUser)) select.value = qUser;
+        
+        // Aggiorna il hint se c'è un cliente selezionato
+        updateClientHint();
+        
+      } catch (error) {
+        console.error('Errore caricamento clienti:', error);
+        select.innerHTML = '<option>❌ Errore nel caricamento</option>';
+      } finally {
+        select.disabled = false;
+        card.classList.remove('loading-state');
+      }
     }
-    
-  } catch (error) {
-    console.error('Error loading clients:', error);
-    select.innerHTML = '<option>Errore nel caricamento</option>';
-    
-    const hint = document.getElementById('clientHint');
-    hint.textContent = 'Errore nel caricamento clienti. Riprova.';
-    hint.style.color = '#dc3545';
-  }
-}
-
-function openSchede() {
-  const clientId = document.getElementById('clientSelect').value;
-  if (!clientId) {
-    alert('Seleziona prima un cliente');
-    return;
-  }
-  window.location.href = `trainer/schede.html?user_id=${encodeURIComponent(clientId)}`;
-}
-
-function openCalendario() {
-  const clientId = document.getElementById('clientSelect').value;
-  if (!clientId) {
-    alert('Seleziona prima un cliente');
-    return;
-  }
-  window.location.href = `trainer/calendario.html?user_id=${encodeURIComponent(clientId)}`;
-}
-
-// Initialize page
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    await ensureTrainer();
-    await loadClients();
-  } catch (error) {
-    console.error('Page initialization error:', error);
-  }
-});
     
     function updateClientHint() {
       const select = document.getElementById('clientSelect');

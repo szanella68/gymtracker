@@ -1,0 +1,26 @@
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand" onclick="window.location.href='/gymtracker/utente/dashboard.html'">
+      <span class="brand-logo">🏋️</span>
+      <span class="brand-title">GymTracker</span>
+    </div>
+
+    <div class="header-actions">
+      <div class="dropdown">
+        <button class="menu-toggle" data-dropdown-toggle>
+          ☰ Menu
+        </button>
+        <div class="dropdown-menu">
+          <a href="utente/calendario.html" class="dropdown-item">📅 Il Mio Calendario</a>
+          <a href="utente/schede.html" class="dropdown-item">📋 Le Mie Schede</a>
+          <a href="utente/goals.html" class="dropdown-item">🎯 I Miei Obiettivi</a>
+          <a href="utente/profilo.html" class="dropdown-item">👤 Il Mio Profilo</a>
+          <a href="utente/report.html" class="dropdown-item">📊 I Miei Progressi</a>
+        </div>
+      </div>
+      <button class="btn-logout btn btn-sm" onclick="window.GymAPI ? GymAPI.logout() : (window.location.href='/gymtracker/utente/')">Logout</button>
+    </div>
+  </div>
+</header>
+
+

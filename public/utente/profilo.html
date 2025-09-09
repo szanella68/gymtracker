@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="utente/css/utente.css">
 </head>
 <body>
+    <div data-include="shared/partials/header_user.html"></div>
     <div class="profile-container">
         <div class="profile-header">
             <div class="profile-avatar" id="profileAvatar">
@@ -16,9 +17,6 @@
             </div>
             <h1 id="profileName">Caricamento...</h1>
             <p id="profileEmail"></p>
-            <button onclick="window.location.href='/gymtracker/utente/dashboard.html'" class="btn-secondary">
-                ← Torna alla Dashboard
-            </button>
         </div>
         
         <div class="profile-tabs">
@@ -138,6 +136,7 @@
     </div>
 
     <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/include.js"></script>
     <script src="shared/js/core/utils.js"></script>
     <script>
         // Auth check

@@ -9,12 +9,12 @@
     <link rel="stylesheet" href="utente/css/utente.css">
 </head>
 <body>
+    <div data-include="shared/partials/header_user.html"></div>
     <main class="user-dashboard">
         <div class="dashboard-header">
-            <h1>🏋️ I miei Allenamenti</h1>
+            <h1>🏋️ La Mia Dashboard</h1>
             <div class="user-welcome">
                 <span id="userWelcome">Benvenuto!</span>
-                <button onclick="logout()" class="btn-logout">Esci</button>
             </div>
         </div>
         
@@ -48,19 +48,19 @@
         <div class="nav-menu">
             <a href="utente/calendario.html" class="nav-card primary">
                 <div class="nav-icon">📅</div>
-                <h3>Il mio Calendario</h3>
+                <h3>Il Mio Calendario</h3>
                 <p>Allenamenti programmati e da completare</p>
             </a>
             
             <a href="utente/schede.html" class="nav-card">
                 <div class="nav-icon">📋</div>
-                <h3>Le Mie Schede</h3>
-                <p>Visualizza i programmi di allenamento</p>
+                <h3>I Miei Programmi di Allenamento</h3>
+                <p>Visualizza i programmi di allenamento (SCHEDE)</p>
             </a>
             
             <a href="utente/goals.html" class="nav-card">
                 <div class="nav-icon">🎯</div>
-                <h3>Obiettivi Personali</h3>
+                <h3>I Miei Obiettivi Personali</h3>
                 <p>Crea e traccia i tuoi obiettivi</p>
             </a>
 
@@ -112,6 +112,7 @@
     </main>
 
     <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/include.js"></script>
     <script src="shared/js/core/utils.js"></script>
     <script>
         // Auth check

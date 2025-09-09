@@ -9,29 +9,20 @@
     <link rel="stylesheet" href="utente/css/utente.css">
 </head>
 <body>
+    <div data-include="shared/partials/header_user.html"></div>
     <div class="calendar-container">
-        <div class="calendar-header">
-            <div class="nav-breadcrumb">
-                <a href="utente/dashboard.html" class="breadcrumb-link">🏠 Dashboard</a>
-                <span class="breadcrumb-separator">›</span>
-                <span class="breadcrumb-current">📅 Il mio Calendario</span>
-            </div>
-            
-            <div class="calendar-controls">
-                <button onclick="goToToday()" class="btn-secondary">Oggi</button>
-                <button onclick="logout()" class="btn-logout">Esci</button>
-            </div>
-        </div>
+        <div class="calendar-header"></div>
 
         <div class="card">
             <div class="card-header">
-                <h1>📅 Il mio Calendario Allenamenti</h1>
+                <h1>📅 Il Mio Calendario Allenamenti</h1>
             </div>
             
             <div class="calendar-nav">
                 <button onclick="changeMonth(-1)" class="btn-secondary">‹ Precedente</button>
                 <h2 id="currentMonth" class="calendar-month">Caricamento...</h2>
                 <button onclick="changeMonth(1)" class="btn-secondary">Successivo ›</button>
+                <button onclick="goToToday()" class="btn-secondary">Oggi</button>
             </div>
 
             <div class="calendar-grid" id="calendarGrid"></div>
@@ -73,6 +64,7 @@
     </div>
 
     <script src="shared/js/core/api.js"></script>
+    <script src="shared/js/include.js"></script>
     <script src="shared/js/core/utils.js"></script>
     <script>
         // Auth check
