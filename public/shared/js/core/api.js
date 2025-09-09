@@ -9,90 +9,27 @@ class GymAPI {
   })();
   
   // Get auth token from localStorage
- // Sostituisci questo metodo in shared/js/core/api.js
-
-// Get auth token from localStorage (compatibilità sistemi multipli)
-static getToken() {
-  // Cerca nei diversi sistemi di storage
-  
-  // 1. Sistema nuovo: gymtracker_session
-  try {
-    const session = localStorage.getItem('gymtracker_session');
-    if (session) {
-      const parsed = JSON.parse(session);
-      if (parsed.access_token) {
-        return parsed.access_token;
-      }
-    }
-  } catch (e) {
-    console.warn('[GymAPI] Error parsing gymtracker_session:', e);
+  static getToken() {
+    return localStorage.getItem('gymtracker_token');
   }
-  
-  // 2. Sistema diretto: gymtracker_token
-  const directToken = localStorage.getItem('gymtracker_token');
-  if (directToken) {
-    return directToken;
-  }
-  
-  // 3. Sistema vecchio: supabase_token (fallback)
-  const supabaseToken = localStorage.getItem('supabase_token');
-  if (supabaseToken) {
-    return supabaseToken;
-  }
-  
-  // 4. Sistema vecchio: supabase_access_token (fallback)
-  const supabaseAccessToken = localStorage.getItem('supabase_access_token');
-  if (supabaseAccessToken) {
-    return supabaseAccessToken;
-  }
-  
-  console.warn('[GymAPI] No auth token found in any storage system');
-  return null;
-}
   static getRefreshToken() {
     return localStorage.getItem('gymtracker_refresh');
   }
-
-  // Sostituisci anche questi metodi in shared/js/core/api.js
-
-// Set auth token to localStorage (salva in formato unificato)
-static setToken(token) {
-  if (token) {
-    // Salva nel sistema principale
+  
+  // Set auth token to localStorage
+  static setToken(token) {
     localStorage.setItem('gymtracker_token', token);
-    
-    // Mantieni compatibilità con sistema vecchio per sicurezza
-    localStorage.setItem('supabase_token', token);
-    
-    console.log('[GymAPI] Token saved in unified storage');
   }
-}
-
-// Set refresh token
-static setRefreshToken(token) {
-  if (token) {
-    localStorage.setItem('gymtracker_refresh', token);
-    localStorage.setItem('supabase_refresh_token', token); // compatibilità
+  static setRefreshToken(token) {
+    if (token) localStorage.setItem('gymtracker_refresh', token);
   }
-}
-
-// Remove auth token from localStorage (pulisce tutti i sistemi)
-static removeToken() {
-  // Pulisci sistema principale
-  localStorage.removeItem('gymtracker_token');
-  localStorage.removeItem('gymtracker_user');
-  localStorage.removeItem('gymtracker_refresh');
-  localStorage.removeItem('gymtracker_session');
   
-  // Pulisci sistema vecchio
-  localStorage.removeItem('supabase_token');
-  localStorage.removeItem('supabase_user');
-  localStorage.removeItem('supabase_refresh_token');
-  localStorage.removeItem('supabase_access_token');
-  
-  console.log('[GymAPI] All auth data cleared from storage');
-}
-
+  // Remove auth token from localStorage
+  static removeToken() {
+    localStorage.removeItem('gymtracker_token');
+    localStorage.removeItem('gymtracker_user');
+    localStorage.removeItem('gymtracker_refresh');
+  }
   
   // Make authenticated request
   static async request(endpoint, options = {}) {
