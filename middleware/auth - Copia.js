@@ -17,33 +17,25 @@ async function verifyWithSupabase(token) {
     const user = await res.json();
     const dbProvider = (process.env.DB_PROVIDER || 'supabase').toLowerCase();
     const metaName = (user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User').trim();
+    const metaRole = (user.user_metadata?.user_type || user.user_metadata?.role || '').toString().toLowerCase();
 
     if (dbProvider === 'supabase') {
+      // Pure Supabase mode: do not touch local DB, return Supabase identity
       try { console.log(`[Auth] Supabase verified user email=${user.email} id=${user.id}`); } catch {}
 
-      // IMPORTANTE: Controllo SOLO tabella user_profiles, NON metadata Auth
-      let role = 'standard'; // Default sempre a 'standard'
-      
+      // Enrich role from profile.user_type if present
+      let role = metaRole === 'admin' ? 'admin' : 'standard';
       try {
         const profRes = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(user.id)}&select=user_type`, {
           headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
         });
-        
         if (profRes.ok) {
           const arr = await profRes.json();
           if (Array.isArray(arr) && arr.length && arr[0]?.user_type) {
             role = arr[0].user_type === 'admin' ? 'admin' : 'standard';
-            console.log(`[Auth] user_type from DB: ${arr[0].user_type} → role: ${role}`);
-          } else {
-            console.log(`[Auth] No user_profiles record found for user ${user.id}`);
           }
-        } else {
-          console.log(`[Auth] Failed to fetch user_profiles: ${profRes.status}`);
         }
-      } catch (dbError) {
-        console.error(`[Auth] Error fetching user_profiles:`, dbError);
-        // role rimane 'standard' in caso di errore (sicurezza)
-      }
+      } catch {}
 
       return {
         id: user.id,
@@ -58,7 +50,6 @@ async function verifyWithSupabase(token) {
     // Legacy hybrid removed in supabase mode
     return null;
   } catch (e) {
-    console.error(`[Auth] verifyWithSupabase error:`, e);
     return null;
   }
 }
@@ -102,14 +93,9 @@ async function authenticateToken(req, res, next) {
 
 // Middleware to check if user is admin
 function requireAdmin(req, res, next) {
-  console.log(`[RequireAdmin] Checking user: ${req.user.email} user_type: ${req.user.user_type}`);
-  
   if (req.user.user_type !== 'admin') {
-    console.log(`[RequireAdmin] DENIED: user_type is '${req.user.user_type}', not 'admin'`);
     return res.status(403).json({ error: 'Admin privileges required' });
   }
-  
-  console.log(`[RequireAdmin] GRANTED for ${req.user.email}`);
   next();
 }
 
