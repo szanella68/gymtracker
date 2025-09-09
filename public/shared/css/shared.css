@@ -137,6 +137,11 @@ p {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
+/* Increase contrast for small text on gradient buttons/cards */
+.btn-primary, .btn-success, .btn-logout, .nav-card.primary, .stats-grid .stat-card {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.18);
+}
+
 .btn-secondary {
   background: #f8f9fa;
   color: #495057;
@@ -200,6 +205,31 @@ p {
 .form-group textarea {
   resize: vertical;
   min-height: 100px;
+}
+
+/* Inline form rows: label left, input right */
+.form-group.inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.form-group.inline label {
+  margin: 0; /* no bottom margin in inline */
+  min-width: 140px;
+}
+.form-group.inline input,
+.form-group.inline select,
+.form-group.inline textarea {
+  width: auto;
+  flex: 1;
+}
+
+@media (max-width: 520px) {
+  .form-group.inline { flex-direction: column; align-items: stretch; }
+  .form-group.inline label { min-width: 0; margin-bottom: 0.5rem; }
+  .form-group.inline input,
+  .form-group.inline select,
+  .form-group.inline textarea { width: 100%; }
 }
 
 /* Cards */
@@ -291,8 +321,8 @@ p {
 }
 
 .nav-card.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #5b67e7 0%, #6a3fb0 100%);
+  color: #ffffff;
 }
 
 .nav-card .nav-icon {
@@ -308,8 +338,10 @@ p {
 
 .nav-card p {
   margin: 0;
-  opacity: 0.8;
+  opacity: 0.92;
   font-size: 0.9rem;
+  color: inherit;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 /* Messages */

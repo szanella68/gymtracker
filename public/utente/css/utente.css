@@ -153,24 +153,36 @@
 }
 
 /* Client-specific stat cards with motivational colors */
+/* Stat cards with stronger contrast on gradients */
 .stats-grid .stat-card:nth-child(1) {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
+  background: linear-gradient(135deg, #1f8e3a 0%, #10b981 100%);
+  color: #ffffff;
 }
 
 .stats-grid .stat-card:nth-child(2) {
-  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-  color: white;
+  background: linear-gradient(135deg, #f59f00 0%, #f76707 100%);
+  color: #ffffff;
 }
 
 .stats-grid .stat-card:nth-child(3) {
-  background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
-  color: white;
+  background: linear-gradient(135deg, #0ea5b7 0%, #6d28d9 100%);
+  color: #ffffff;
 }
 
 .stats-grid .stat-card .stat-info h3 {
-  color: inherit;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
+
+/* Ensure subtitle text is readable on gradient backgrounds */
+.stats-grid .stat-card .stat-info p {
+  color: #ffffff;
+  opacity: 0.95;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Icon contrast tweak */
+.stats-grid .stat-card .stat-icon { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
 
 /* Upcoming Sessions */
 .upcoming-sessions {

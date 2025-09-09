@@ -118,13 +118,13 @@
         <div class="modal-content">
           <button class="modal-close" onclick="closeModal('goalCreateModal')">&times;</button>
           <h2>➕ Nuovo Obiettivo</h2>
-          <div class="goal-form" style="display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="form-group">
-              <label>Titolo</label>
+          <div class="goal-form">
+            <div class="form-group inline">
+              <label for="goalTitle">Titolo</label>
               <input id="goalTitle" type="text" placeholder="Es: Correre maratona in 3 ore">
             </div>
-            <div class="form-group">
-              <label>Tipo</label>
+            <div class="form-group inline">
+              <label for="goalType">Tipo</label>
               <select id="goalType">
                 <option value="custom">Custom</option>
                 <option value="weight">Peso</option>
@@ -133,20 +133,20 @@
                 <option value="distance">Distanza</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Target</label>
+            <div class="form-group inline">
+              <label for="goalValue">Target</label>
               <input id="goalValue" type="number" step="0.1" placeholder="Valore">
             </div>
-            <div class="form-group">
-              <label>Unità</label>
+            <div class="form-group inline">
+              <label for="goalUnit">Unità</label>
               <input id="goalUnit" type="text" placeholder="kg, reps, min, km...">
             </div>
-            <div class="form-group">
-              <label>Scadenza</label>
+            <div class="form-group inline">
+              <label for="goalDate">Scadenza</label>
               <input id="goalDate" type="date">
             </div>
-            <div class="form-group" style="flex:1; min-width:240px;">
-              <label>Descrizione</label>
+            <div class="form-group inline">
+              <label for="goalDesc">Descrizione</label>
               <input id="goalDesc" type="text" placeholder="Dettagli opzionali">
             </div>
             <div class="form-group">
@@ -183,13 +183,13 @@
         <div class="modal-content">
           <button class="modal-close" onclick="closeModal('goalEditModal')">&times;</button>
           <h2>✏️ Modifica Obiettivo</h2>
-          <div class="goal-form" style="display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="form-group">
-              <label>Titolo</label>
+          <div class="goal-form">
+            <div class="form-group inline">
+              <label for="editGoalTitle">Titolo</label>
               <input id="editGoalTitle" type="text" value="${Utils.escapeHtml(g.title || '')}" placeholder="Titolo">
             </div>
-            <div class="form-group">
-              <label>Tipo</label>
+            <div class="form-group inline">
+              <label for="editGoalType">Tipo</label>
               <select id="editGoalType">
                 <option value="custom" ${g.target_type==='custom'?'selected':''}>Custom</option>
                 <option value="weight" ${g.target_type==='weight'?'selected':''}>Peso</option>
@@ -198,24 +198,24 @@
                 <option value="distance" ${g.target_type==='distance'?'selected':''}>Distanza</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Target</label>
+            <div class="form-group inline">
+              <label for="editGoalValue">Target</label>
               <input id="editGoalValue" type="number" step="0.1" value="${g.target_value ?? ''}" placeholder="Valore">
             </div>
-            <div class="form-group">
-              <label>Unità</label>
+            <div class="form-group inline">
+              <label for="editGoalUnit">Unità</label>
               <input id="editGoalUnit" type="text" value="${Utils.escapeHtml(g.unit || '')}" placeholder="kg, reps, min, km...">
             </div>
-            <div class="form-group">
-              <label>Scadenza</label>
+            <div class="form-group inline">
+              <label for="editGoalDate">Scadenza</label>
               <input id="editGoalDate" type="date" value="${g.target_date ? String(g.target_date).slice(0,10) : ''}">
             </div>
-            <div class="form-group" style="flex:1; min-width:240px;">
-              <label>Descrizione</label>
+            <div class="form-group inline">
+              <label for="editGoalDesc">Descrizione</label>
               <input id="editGoalDesc" type="text" value="${Utils.escapeHtml(g.description || '')}" placeholder="Dettagli opzionali">
             </div>
-            <div class="form-group">
-              <label>Stato</label>
+            <div class="form-group inline">
+              <label for="editGoalStatus">Stato</label>
               <select id="editGoalStatus">
                 <option value="in_progress" ${g.status==='in_progress'?'selected':''}>In corso</option>
                 <option value="completed" ${g.status==='completed'?'selected':''}>Completato</option>
@@ -277,11 +277,22 @@
         <button class="modal-close" onclick="closeModal('goalProgressModal')">&times;</button>
         <h2>📈 Progresso — ${title}</h2>
         <div id="progressList" class="weight-history" style="max-height:300px; overflow:auto;"></div>
-        <div class="flex" style="gap:8px; margin-top:10px;">
-          <input id="progressDate" type="date" style="width:160px;" value="${today}"/>
-          <input id="progressValue" type="number" step="0.1" placeholder="Valore" style="width:140px;"/>
-          <input id="progressNote" type="text" placeholder="Nota (opzionale)" style="flex:1;"/>
-          <button class="btn-primary" onclick="addProgress('${id}')">Aggiungi</button>
+        <div class="goal-form" style="margin-top:10px;">
+          <div class="form-group inline">
+            <label for="progressDate">Data</label>
+            <input id="progressDate" type="date" value="${today}"/>
+          </div>
+          <div class="form-group inline">
+            <label for="progressValue">Valore</label>
+            <input id="progressValue" type="number" step="0.1" placeholder="Valore"/>
+          </div>
+          <div class="form-group inline">
+            <label for="progressNote">Nota</label>
+            <input id="progressNote" type="text" placeholder="Nota (opzionale)"/>
+          </div>
+          <div class="form-group">
+            <button class="btn-primary" onclick="addProgress('${id}')">Aggiungi</button>
+          </div>
         </div>
       </div>`;
       document.body.appendChild(box); setTimeout(()=> box.classList.add('show'), 10);

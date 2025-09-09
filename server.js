@@ -14,7 +14,10 @@ const app = express();
 const PORT = process.env.PORT || 3010;
 
 // Behind Apache we want to trust proxy headers (X-Forwarded-*)
-app.set('trust proxy', true);
+// Avoid permissive setting that breaks express-rate-limit validation
+// If behind a single reverse proxy (Apache/Nginx) on the same host, set to 1
+// or configure via env TRUST_PROXY (e.g. '127.0.0.1', 'loopback', 'uniquelocal')
+app.set('trust proxy', process.env.TRUST_PROXY || 1);
 
 // Security middleware
 app.use(helmet({

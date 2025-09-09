@@ -90,55 +90,12 @@
             <div id="recentCompleted" class="weight-history"></div>
         </div>
 
-        <!-- Strength Progress -->
+        <!-- Strength Progress (dynamic) -->
         <div class="card">
             <div class="card-header">
                 <h3>💪 Progressi di Forza</h3>
             </div>
-            
-            <div class="strength-progress">
-                <div class="exercise-progress">
-                    <div class="exercise-header">
-                        <h4>🏋️ Panca Piana</h4>
-                        <span class="pr-badge">PR: 80kg</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 85%"></div>
-                    </div>
-                    <div class="progress-details">
-                        <span>Partenza: 60kg</span>
-                        <span>Attuale: 80kg (+33%)</span>
-                    </div>
-                </div>
-
-                <div class="exercise-progress">
-                    <div class="exercise-header">
-                        <h4>🦵 Squat</h4>
-                        <span class="pr-badge">PR: 100kg</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 75%"></div>
-                    </div>
-                    <div class="progress-details">
-                        <span>Partenza: 70kg</span>
-                        <span>Attuale: 100kg (+43%)</span>
-                    </div>
-                </div>
-
-                <div class="exercise-progress">
-                    <div class="exercise-header">
-                        <h4>🏃 Deadlift</h4>
-                        <span class="pr-badge">PR: 120kg</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 90%"></div>
-                    </div>
-                    <div class="progress-details">
-                        <span>Partenza: 80kg</span>
-                        <span>Attuale: 120kg (+50%)</span>
-                    </div>
-                </div>
-            </div>
+            <div id="strengthProgress" class="strength-progress"></div>
         </div>
 
         <!-- Recent Exercises Summary -->
@@ -323,6 +280,81 @@
             await loadRecent();
             await loadStrengthProgress();
         })();
+
+        async function loadStrengthProgress() {
+            const box = document.getElementById('strengthProgress');
+            box.innerHTML = 'Caricamento...';
+            try {
+                const { items } = await GymAPI.get('/users/me/exercises/active-history?days=120&upcoming_days=45');
+                if (!items || !items.length) {
+                    box.innerHTML = '<div class="empty-state">Nessun esercizio attivo trovato nelle prossime settimane</div>';
+                    return;
+                }
+                box.innerHTML = items.map(it => renderStrengthItem(it)).join('');
+            } catch (e) {
+                box.innerHTML = '<div class="error-message">Errore caricamento progressi di forza</div>';
+            }
+        }
+
+        function renderStrengthItem(it){
+            const series = Array.isArray(it.series) ? it.series.filter(p => typeof p.weight === 'number' || typeof p.reps === 'number') : [];
+            if (!series.length) return '';
+            const firstW = series.find(p => typeof p.weight === 'number')?.weight ?? null;
+            const last = it.latest || series[series.length-1];
+            const lastW = typeof last.weight === 'number' ? last.weight : null;
+            const pr = it.pr_weight ?? lastW ?? firstW ?? 0;
+            const pct = pr ? Math.max(0, Math.min(100, Math.round(((lastW || 0) / pr) * 100))) : 0;
+            const deltaPct = (firstW && lastW) ? Math.round(((lastW - firstW) / firstW) * 100) : 0;
+            const svg = buildDualSparkline(series);
+            return `
+              <div class="exercise-progress">
+                <div class="exercise-header">
+                  <h4>${Utils.escapeHtml(it.name)}</h4>
+                  <span class="pr-badge">PR: ${pr ? pr + 'kg' : '—'}</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+                <div class="progress-details">
+                  <span>Partenza: ${firstW != null ? firstW+'kg' : '—'}</span>
+                  <span>Attuale: ${lastW != null ? lastW+'kg' : '—'} ${firstW && lastW ? `(${deltaPct>0?'+':''}${deltaPct}%)` : ''}</span>
+                </div>
+                <div class="mini-chart">${svg}</div>
+              </div>`;
+        }
+
+        function buildDualSparkline(series){
+            // Prepare normalized points for weight and reps
+            const pts = series.map(s => ({
+                w: typeof s.weight === 'number' ? s.weight : null,
+                r: typeof s.reps === 'number' ? s.reps : null
+            }));
+            const wVals = pts.map(p=>p.w).filter(v=>v!=null);
+            const rVals = pts.map(p=>p.r).filter(v=>v!=null);
+            const W = 240, H = 60, P=6;
+            const n = series.length;
+            const x = i => P + (i*(W-2*P))/Math.max(1,(n-1));
+            const scale = (val, min, max) => {
+                if (min===max) return H/2;
+                return H - P - ((val - min) / (max - min)) * (H - 2*P);
+            };
+            let wPath = '', rPath='';
+            if (wVals.length) {
+                const wMin = Math.min(...wVals), wMax = Math.max(...wVals);
+                wPath = pts.map((p,i)=> p.w==null?null:`${i===0?'M':'L'}${x(i)},${scale(p.w,wMin,wMax)}`).filter(Boolean).join(' ');
+            }
+            if (rVals.length) {
+                const rMin = Math.min(...rVals), rMax = Math.max(...rVals);
+                rPath = pts.map((p,i)=> p.r==null?null:`${i===0?'M':'L'}${x(i)},${scale(p.r,rMin,rMax)}`).filter(Boolean).join(' ');
+            }
+            return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+                <rect x="0" y="0" width="${W}" height="${H}" rx="6" fill="#fff" stroke="#e9ecef" />
+                ${wPath ? `<path d="${wPath}" fill="none" stroke="#10b981" stroke-width="2" />` : ''}
+                ${rPath ? `<path d="${rPath}" fill="none" stroke="#6366f1" stroke-width="2" />` : ''}
+                <g font-size="10" fill="#6c757d">
+                  <text x="8" y="12">kg</text>
+                  <text x="28" y="12" fill="#6366f1">reps</text>
+                </g>
+              </svg>`;
+        }
 
         // Add styles for new components
         const style = document.createElement('style');

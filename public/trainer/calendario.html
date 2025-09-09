@@ -99,7 +99,8 @@
       }
       try {
         const me = await GymAPI.get('/users/me');
-        if (me.profile?.user_type !== 'admin') {
+        const role = (me?.profile?.user_type || me?.user_type || '').toString().toLowerCase();
+        if (role !== 'admin') {
           alert('Accesso riservato ai trainer');
           window.location.href = '/gymtracker/utente/dashboard.html';
           return false;
@@ -138,8 +139,11 @@
         opt.textContent = c.full_name ? `${c.full_name} (${c.email})` : (c.email || 'Senza nome');
         sel.appendChild(opt);
       });
-      if (prev && clients.some(c => c.id === prev)) sel.value = prev;
-      if (!sel.value && clients.length) sel.value = clients[0].id;
+      const q = new URLSearchParams(window.location.search);
+      const qUser = q.get('user_id');
+      if (qUser && clients.some(c => c.id === qUser)) sel.value = qUser;
+      else if (prev && clients.some(c => c.id === prev)) sel.value = prev;
+      else if (!sel.value && clients.length) sel.value = clients[0].id;
       if (sel.value) onClientChange();
     }
 

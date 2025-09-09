@@ -51,12 +51,21 @@ router.get('/me', authenticateToken, async (req, res) => {
         } catch {}
       }
 
+      const adminEmails = (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
+      // Start from auth middleware role, then profile.user_type if set, then env override
+      let resolvedUserType = req.user?.user_type || 'standard';
+      if (ensuredProfile?.user_type) {
+        resolvedUserType = ensuredProfile.user_type;
+      }
+      if (adminEmails.includes((req.user.email||'').toLowerCase())) {
+        resolvedUserType = 'admin';
+      }
       res.json({
         id: supabaseId,
         email: req.user.email,
         profile: {
           full_name: ensuredProfile?.full_name || req.user.full_name || null,
-          user_type: ensuredProfile?.user_type || 'standard',
+          user_type: resolvedUserType,
           phone: ensuredProfile?.phone || null,
           date_of_birth: ensuredProfile?.date_of_birth || null,
           gender: ensuredProfile?.gender || null,
@@ -340,6 +349,87 @@ router.get('/me/exercises/pr', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Exercise PR error:', error);
     res.status(500).json({ error: 'Failed to fetch PRs' });
+  }
+});
+
+// Active exercises history based on upcoming schedule and recent completions
+router.get('/me/exercises/active-history', authenticateToken, async (req, res) => {
+  try {
+    const supabaseId = req.user.supabase_id || req.user.id;
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+    const authHeader = req.headers['authorization'] || '';
+    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': authHeader };
+
+    const upcomingDays = Math.max(1, Math.min(90, parseInt(req.query.upcoming_days || '30', 10)));
+    const historyDays = Math.max(7, Math.min(365, parseInt(req.query.days || '90', 10)));
+
+    const today = new Date();
+    const fmt = (d) => d.toISOString().slice(0,10);
+    const startUpcoming = fmt(today);
+    const endUpcoming = fmt(new Date(today.getTime() + upcomingDays*24*60*60*1000));
+
+    // 1) Upcoming workouts to detect active sessions
+    const wlUpcomingUrl = `${SUPABASE_URL}/rest/v1/workout_logs?user_id=eq.${encodeURIComponent(supabaseId)}&workout_date=gte.${encodeURIComponent(startUpcoming)}&workout_date=lte.${encodeURIComponent(endUpcoming)}&select=sessione_id&order=workout_date.asc`;
+    const upRes = await fetch(wlUpcomingUrl, { headers });
+    const upArr = upRes.ok ? await upRes.json() : [];
+    const sessionIds = Array.from(new Set((Array.isArray(upArr) ? upArr : []).map(w => w.sessione_id).filter(Boolean)));
+
+    // If no upcoming sessions, return empty
+    if (!sessionIds.length) return res.json({ items: [] });
+
+    // 2) Exercises for these sessions
+    const exUrl = `${SUPABASE_URL}/rest/v1/exercises?sessione_id=in.(${sessionIds.map(encodeURIComponent).join(',')})&select=id,name,sessione_id`;
+    const exRes = await fetch(exUrl, { headers });
+    const exercises = exRes.ok ? await exRes.json() : [];
+    const exerciseIds = exercises.map(e => e.id);
+    const nameById = new Map(exercises.map(e => [e.id, e.name]));
+
+    if (!exerciseIds.length) return res.json({ items: [] });
+
+    // 3) Completed workout logs in history window
+    const startHistory = fmt(new Date(today.getTime() - historyDays*24*60*60*1000));
+    const wlHistoryUrl = `${SUPABASE_URL}/rest/v1/workout_logs?user_id=eq.${encodeURIComponent(supabaseId)}&status=eq.completed&workout_date=gte.${encodeURIComponent(startHistory)}&select=id,workout_date&order=workout_date.asc`;
+    const wlRes = await fetch(wlHistoryUrl, { headers });
+    const wls = wlRes.ok ? await wlRes.json() : [];
+    if (!Array.isArray(wls) || !wls.length) return res.json({ items: [] });
+    const wlIds = wls.map(w => w.id);
+    const dateByWl = new Map(wls.map(w => [w.id, w.workout_date]));
+
+    // 4) Exercise logs for these workouts, filtered by our exercise ids
+    const wlIn = wlIds.map(id => encodeURIComponent(id)).join(',');
+    const exIn = exerciseIds.map(id => encodeURIComponent(id)).join(',');
+    const elUrl = `${SUPABASE_URL}/rest/v1/exercise_logs?workout_log_id=in.(${wlIn})&exercise_id=in.(${exIn})&select=workout_log_id,exercise_id,actual_sets_data`;
+    const elRes = await fetch(elUrl, { headers });
+    const eLogs = elRes.ok ? await elRes.json() : [];
+
+    // 5) Build series per exercise
+    const byEx = new Map();
+    for (const l of eLogs) {
+      const date = dateByWl.get(l.workout_log_id);
+      if (!date) continue;
+      const set = Array.isArray(l.actual_sets_data) && l.actual_sets_data.length ? l.actual_sets_data[0] : {};
+      const reps = typeof set.reps === 'number' ? set.reps : null;
+      const weight = typeof set.weight === 'number' ? set.weight : null;
+      const arr = byEx.get(l.exercise_id) || [];
+      arr.push({ date, reps, weight });
+      byEx.set(l.exercise_id, arr);
+    }
+
+    const items = [];
+    for (const id of exerciseIds) {
+      const series = (byEx.get(id) || []).sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+      if (!series.length) continue;
+      const latest = series[series.length - 1];
+      let pr_weight = null;
+      for (const p of series) { if (typeof p.weight === 'number') pr_weight = pr_weight == null ? p.weight : Math.max(pr_weight, p.weight); }
+      items.push({ exercise_id: id, name: nameById.get(id) || 'Esercizio', latest, pr_weight, series });
+    }
+
+    res.json({ items });
+  } catch (error) {
+    console.error('Active exercises history error:', error);
+    res.status(500).json({ error: 'Failed to fetch active exercises history' });
   }
 });
 

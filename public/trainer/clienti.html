@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymTracker - Gestione Clienti</title>
+  <base href="/gymtracker/">
+  <link rel="stylesheet" href="shared/css/shared.css">
+  <link rel="stylesheet" href="trainer/css/trainer.css">
+</head>
+<body>
+  <div data-include="shared/partials/header.html"></div>
+  <main class="clients-container" style="max-width:900px; margin:0 auto; padding:20px;">
+    <div class="clients-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+      <h1>👤 Gestione Clienti</h1>
+      <a href="trainer/dashboard.html" class="btn-secondary">← Torna alla Dashboard</a>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Seleziona cliente</h3></div>
+      <div class="form-group inline">
+        <label for="clientSelect">Cliente</label>
+        <select id="clientSelect" class="w-full" style="max-width:480px;"></select>
+      </div>
+      <div id="clientHint" style="color:#6c757d; font-size:14px;">
+        Seleziona un cliente per procedere con la gestione dettagliata (schede, calendario, scadenze…)
+      </div>
+      <div class="flex" style="gap:10px; margin-top:12px;">
+        <button class="btn-primary" onclick="openSchede()">Apri Schede</button>
+        <button class="btn-secondary" onclick="openCalendario()">Apri Calendario</button>
+      </div>
+    </div>
+  </main>
+  <div data-include="shared/partials/footer.html"></div>
+
+  <script src="shared/js/core/api.js"></script>
+  <script src="shared/js/include.js"></script>
+  <script src="shared/js/core/utils.js"></script>
+  <script>
+    async function ensureTrainer() {
+      const token = GymAPI.getToken();
+      if (!token) { window.location.href = '/gymtracker/utente/'; return; }
+      const u = await GymAPI.getCurrentUser();
+      const role = (u?.profile?.user_type || u?.user_type || '').toString().toLowerCase();
+      if (role !== 'admin') { alert('Accesso riservato agli amministratori'); window.location.href = '/gymtracker/utente/dashboard.html'; }
+    }
+
+    async function loadClients() {
+      const select = document.getElementById('clientSelect');
+      select.innerHTML = '<option>Caricamento...</option>';
+      const data = await GymAPI.get('/trainer/clients?active=all');
+      const clients = Array.isArray(data.clients) ? data.clients : [];
+      if (!clients.length) { select.innerHTML = '<option>Nessun cliente</option>'; return; }
+      select.innerHTML = clients.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.full_name || c.email || 'Cliente')}</option>`).join('');
+
+      // Preseleziona "Stefano Nidec" se presente
+      const pref = clients.find(c => /stefano\s+nidec/i.test((c.full_name||'') + ' ' + (c.email||'')));
+      if (pref) select.value = pref.id;
+      // Oppure da query ?user_id=...
+      const q = new URLSearchParams(location.search);
+      const qUser = q.get('user_id');
+      if (qUser && clients.some(c => c.id === qUser)) select.value = qUser;
+    }
+
+    function openSchede(){ const id = document.getElementById('clientSelect').value; if (!id) return alert('Seleziona un cliente'); window.location.href = `trainer/schede.html?user_id=${encodeURIComponent(id)}`; }
+    function openCalendario(){ const id = document.getElementById('clientSelect').value; if (!id) return alert('Seleziona un cliente'); window.location.href = `trainer/calendario.html?user_id=${encodeURIComponent(id)}`; }
+
+    (async function init(){
+      try { await ensureTrainer(); await loadClients(); } catch(e){ console.error(e); }
+    })();
+  </script>
+</body>
+</html>

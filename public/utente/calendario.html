@@ -168,10 +168,42 @@
                 <div class="session-info">
                     ${list}
                 </div>`;
-            document.getElementById('sessionModal').classList.add('show');
+            const modal = document.getElementById('sessionModal');
+            modal.classList.add('show');
+            try { addModalCloseGuards(modal, () => false); } catch {}
         }
 
-        function closeModal(modalId) { document.getElementById(modalId).classList.remove('show'); }
+        // Modal helpers con avviso modifiche non salvate
+        function addModalCloseGuards(modalEl, isDirtyFn) {
+            if (!modalEl) return;
+            try { modalEl._cleanup && modalEl._cleanup(); } catch {}
+            function attemptClose() {
+                try {
+                    if (isDirtyFn && isDirtyFn()) {
+                        const ok = confirm('Hai modifiche non salvate. Chiudere senza salvare?');
+                        if (!ok) return;
+                    }
+                } catch {}
+                cleanup();
+                modalEl.classList.remove('show');
+            }
+            function onBackdrop(e){ if (e.target === modalEl) attemptClose(); }
+            function onKey(e){ if (e.key === 'Escape') attemptClose(); }
+            function cleanup(){
+                modalEl.removeEventListener('click', onBackdrop);
+                document.removeEventListener('keydown', onKey);
+            }
+            modalEl._attemptClose = attemptClose;
+            modalEl._cleanup = cleanup;
+            modalEl.addEventListener('click', onBackdrop);
+            document.addEventListener('keydown', onKey);
+        }
+        function closeModal(modalId, force=false) {
+            const el = document.getElementById(modalId);
+            if (!el) return;
+            if (force || !el._attemptClose) { try { el._cleanup && el._cleanup(); } catch {} el.classList.remove('show'); return; }
+            el._attemptClose();
+        }
         function logout() { const c = confirm('Sei sicuro di voler uscire?'); if (c) GymAPI.logout(); }
         document.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) closeModal(e.target.id); });
 
@@ -230,6 +262,37 @@
                     </div>
                   </div>`;
                 document.getElementById('sessionDetails').innerHTML = html;
+                // Cattura stato iniziale per guard (post-render)
+                const initial = {};
+                Array.from(document.querySelectorAll('[id^="rep_"]')).forEach(r => {
+                    const exId = r.id.replace('rep_', '');
+                    const k = document.getElementById(`kg_${exId}`);
+                    const n = document.getElementById(`note_${exId}`);
+                    initial[exId] = {
+                        reps: String(r.value ?? ''),
+                        weight: String(k?.value ?? ''),
+                        notes: String(n?.value ?? '')
+                    };
+                });
+                window._initialWorkoutInputs = initial;
+                const modal2 = document.getElementById('sessionModal');
+                addModalCloseGuards(modal2, function isDirtyWorkout(){
+                    const init = window._initialWorkoutInputs || {};
+                    const keys = Object.keys(init);
+                    for (const exId of keys) {
+                        const r = document.getElementById(`rep_${exId}`);
+                        const k = document.getElementById(`kg_${exId}`);
+                        const n = document.getElementById(`note_${exId}`);
+                        const cur = {
+                            reps: (r?.value ?? '').toString(),
+                            weight: (k?.value ?? '').toString(),
+                            notes: (n?.value ?? '').toString()
+                        };
+                        const ini = init[exId] || { reps:'', weight:'', notes:'' };
+                        if (cur.reps !== ini.reps || cur.weight !== ini.weight || cur.notes !== ini.notes) return true;
+                    }
+                    return false;
+                });
             } catch (e) {
                 alert('Errore caricamento esercizi');
             }
@@ -241,6 +304,8 @@
                 const weight = document.getElementById(`kg_${exerciseId}`).value;
                 const notes = document.getElementById(`note_${exerciseId}`).value;
                 await GymAPI.post('/users/me/exercise-logs', { workout_log_id: workoutLogId, exercise_id: exerciseId, reps, weight, notes });
+                if (!window._initialWorkoutInputs) window._initialWorkoutInputs = {};
+                window._initialWorkoutInputs[exerciseId] = { reps: String(reps ?? ''), weight: String(weight ?? ''), notes: String(notes ?? '') };
                 alert('Salvato');
             } catch (e) { alert('Errore salvataggio'); }
         }
@@ -255,6 +320,8 @@
                     const weight = document.getElementById(`kg_${exerciseId}`).value;
                     const notes = document.getElementById(`note_${exerciseId}`).value;
                     await GymAPI.post('/users/me/exercise-logs', { workout_log_id: workoutLogId, exercise_id: exerciseId, reps, weight, notes });
+                    if (!window._initialWorkoutInputs) window._initialWorkoutInputs = {};
+                    window._initialWorkoutInputs[exerciseId] = { reps: String(reps ?? ''), weight: String(weight ?? ''), notes: String(notes ?? '') };
                 }
                 alert('Tutti i dati salvati');
             } catch (e) { alert('Errore salvataggio multiplo'); }
@@ -282,7 +349,7 @@
             try {
                 await GymAPI.post('/users/me/workouts/complete', { workout_log_id: workoutLogId });
                 alert('Sessione completata');
-                closeModal('sessionModal');
+                closeModal('sessionModal', true);
                 await loadScheduleForMonth();
                 renderCalendar();
             } catch (e) { alert('Errore completamento sessione'); }
@@ -356,6 +423,19 @@
             
             .session-info .exercises-list li {
                 margin-bottom: 8px;
+            }
+            /* Inline form rows in workout modal */
+            .session-info .form-group { display:flex; align-items:center; gap:12px; }
+            .session-info .form-group label { margin:0; min-width:140px; }
+            .session-info .form-group input,
+            .session-info .form-group select,
+            .session-info .form-group textarea { flex:1; width:auto; }
+            @media (max-width: 520px) {
+              .session-info .form-group { flex-direction: column; align-items: stretch; }
+              .session-info .form-group label { min-width: 0; margin-bottom: 6px; }
+              .session-info .form-group input,
+              .session-info .form-group select,
+              .session-info .form-group textarea { width: 100%; }
             }
             /* Completed styling */
             .calendar-day.completed { border-color: #28a745; }

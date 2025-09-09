@@ -18,8 +18,8 @@
                 <button onclick="logout()" class="btn-logout">Esci</button>
             </div>
         </div>
-        
-        <!-- Trainer Stats -->
+
+        <!-- Trainer Stats (ripristinati) -->
         <div class="trainer-stats stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">👥</div>
@@ -43,8 +43,8 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Navigation -->
+
+        <!-- Navigazione principale -->
         <div class="trainer-nav nav-menu">
             <a href="trainer/clienti.html" class="nav-card primary">
                 <div class="nav-icon">👥</div>
@@ -70,20 +70,54 @@
                 <p>Analisi performance e progressi</p>
             </a>
         </div>
-        
-        <!-- Recent Activities -->
+
+        <!-- Attività recenti (ripristinato contenitore) -->
         <div class="card">
             <div class="card-header">
                 <h3>📋 Attività Recenti</h3>
             </div>
-            <div id="recentActivities">
-                <div class="empty-state">
-                    <div class="empty-icon">📝</div>
-                    <h3>Nessuna attività recente</h3>
-                    <p>Le attività recenti dei clienti appariranno qui.</p>
+            <div id="recentActivities"></div>
+        </div>
+
+        <!-- 1) Clienti attivi/inattivi (torta) -->
+        <div class="card">
+            <div class="card-header"><h3>👥 Clienti Attivi vs Non Attivi</h3></div>
+            <div class="flex" style="gap:20px; align-items:center;">
+                <svg id="clientsPie" width="160" height="160" viewBox="0 0 160 160"></svg>
+                <div>
+                    <div><strong>Attivi:</strong> <span id="activeCount">--</span></div>
+                    <div><strong>Non attivi:</strong> <span id="inactiveCount">--</span></div>
+                    <div style="color:#6c757d; font-size:14px;">Periodo: ultime 8 settimane</div>
                 </div>
             </div>
         </div>
+
+        <!-- 2) Gantt settimanale per clienti -->
+        <div class="card">
+            <div class="card-header"><h3>🗂️ Piano settimanale (fatto/da fare)</h3></div>
+            <div id="ganttWeeks" class="gantt-weeks"></div>
+            <div id="ganttGrid" class="gantt-grid"></div>
+        </div>
+
+        <!-- 3) Pareto puntualità -->
+        <div class="card">
+            <div class="card-header"><h3>🏅 Top 10 Puntualità</h3></div>
+            <div id="paretoPunctual" class="pareto-list"></div>
+        </div>
+
+        <!-- 4) Trend in miglioramento -->
+        <div class="card">
+            <div class="card-header"><h3>📈 Trend in crescita</h3></div>
+            <div id="paretoTrend" class="pareto-list"></div>
+        </div>
+
+        <!-- 5) Ritardatari -->
+        <div class="card">
+            <div class="card-header"><h3>⏳ Ritardatari</h3></div>
+            <div id="paretoLaggards" class="pareto-list"></div>
+        </div>
+
+        <!-- Gestione utente spostata in trainer/clienti.html -->
         
         <!-- Clients needing attention -->
         <div class="attention-needed">
@@ -181,19 +215,80 @@
             
             try {
                 const userProfile = await GymAPI.getCurrentUser();
-                if (userProfile.profile?.user_type !== 'admin') {
+                const role = (userProfile?.profile?.user_type || userProfile?.user_type || '').toString().toLowerCase();
+                if (role !== 'admin') {
                     alert('Accesso riservato agli amministratori');
                     window.location.href = '/gymtracker/utente/dashboard.html';
                     return;
                 }
                 
                 await loadTrainerDashboard();
+                await loadOverview();
                 
             } catch (error) {
                 console.error('Auth check failed:', error);
                 GymAPI.removeToken();
                 window.location.href = '/gymtracker/utente/';
             }
+        }
+
+        async function loadOverview(){
+            const weeks = 8;
+            const data = await GymAPI.get(`/trainer/dashboard/overview?weeks=${weeks}`);
+            // Pie
+            document.getElementById('activeCount').textContent = data.active_count;
+            document.getElementById('inactiveCount').textContent = data.inactive_count;
+            renderPie('clientsPie', data.active_count, data.inactive_count);
+            // Gantt headers
+            const gw = document.getElementById('ganttWeeks');
+            gw.innerHTML = data.weeks.map(w => `<div class="w">${new Date(w).toLocaleDateString('it-IT', { month:'2-digit', day:'2-digit' })}</div>`).join('');
+            // Gantt rows
+            const grid = document.getElementById('ganttGrid');
+            grid.innerHTML = data.clients.map(c => `
+                <div class="gantt-row">
+                    <div class="gantt-name">${Utils.escapeHtml(c.name)}</div>
+                    <div class="gantt-cells">${c.weekly.map(x => `<div class="gantt-cell ${x.status}"></div>`).join('')}</div>
+                </div>`).join('');
+            // Pareto punctuality (top 10)
+            const byAdh = [...data.clients].sort((a,b)=> (b.adherence||0) - (a.adherence||0)).slice(0,10);
+            renderPareto('paretoPunctual', byAdh, v => v.adherence, '%', false);
+            // Trend up
+            const byTrend = [...data.clients].filter(x=> (x.trendDelta||0)>0).sort((a,b)=> (b.trendDelta||0)-(a.trendDelta||0)).slice(0,10);
+            renderPareto('paretoTrend', byTrend, v => v.trendDelta, 'pp', false);
+            // Laggards
+            const worst = [...data.clients].sort((a,b)=> (a.adherence||0)-(b.adherence||0)).slice(0,10);
+            renderPareto('paretoLaggards', worst, v => v.adherence, '%', true);
+            // Client select
+            const sel = document.getElementById('clientSelect');
+            sel.innerHTML = data.clients.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.name)}</option>`).join('');
+        }
+
+        function renderPie(elId, act, inact){
+            const total = Math.max(1, (act||0)+(inact||0));
+            const frac = (act/total);
+            const a = frac * 2*Math.PI;
+            const r = 70, cx=80, cy=80;
+            const large = a > Math.PI ? 1 : 0;
+            const x = cx + r * Math.cos(a - Math.PI/2);
+            const y = cy + r * Math.sin(a - Math.PI/2);
+            const pathA = `M ${cx} ${cy-r} A ${r} ${r} 0 ${large} 1 ${x} ${y} L ${cx} ${cy} Z`;
+            const svg = document.getElementById(elId);
+            svg.innerHTML = `
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="#e9ecef" />
+                <path d="${pathA}" fill="#10b981" />
+                <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#0f172a">${Math.round(frac*100)}%</text>`;
+        }
+
+        function renderPareto(elId, arr, valFn, suffix, invert){
+            const box = document.getElementById(elId);
+            box.innerHTML = arr.map(c => {
+                const v = Math.max(0, Math.min(100, valFn(c) || 0));
+                return `<div class="pareto-item">
+                    <div style=\"min-width:200px;\">${Utils.escapeHtml(c.name)}</div>
+                    <div class=\"pareto-bar\"><div class=\"pareto-fill ${invert?'down':''}\" style=\"width:${v}%;\"></div></div>
+                    <div class=\"pareto-value\">${v}${suffix}</div>
+                </div>`;
+            }).join('');
         }
         
         async function loadTrainerDashboard() {

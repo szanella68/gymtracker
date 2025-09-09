@@ -102,8 +102,12 @@
         opt.textContent = label;
         sel.appendChild(opt);
       });
-      // Mantieni selezione precedente se ancora presente, altrimenti seleziona il primo
-      if (prev && clientsData.some(c => c.id === prev)) {
+      // Pre-selezione da query ?user_id=..., poi mantieni selezione precedente, poi primo
+      const q = new URLSearchParams(window.location.search);
+      const qUser = q.get('user_id');
+      if (qUser && clientsData.some(c => c.id === qUser)) {
+        sel.value = qUser;
+      } else if (prev && clientsData.some(c => c.id === prev)) {
         sel.value = prev;
       } else if (clientsData.length) {
         sel.value = clientsData[0].id;

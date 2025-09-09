@@ -557,3 +557,71 @@ router.post('/schedule/extend', authenticateToken, requireAdmin, async (req, res
 });
 
 module.exports = router;
+// Dashboard Overview: active/inactive counts, weekly matrix, and adherence rankings
+router.get('/dashboard/overview', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const weeks = Math.max(4, Math.min(16, parseInt(req.query.weeks || '8', 10)));
+    const end = new Date();
+    const mondayOf = (d) => { const x = new Date(d); const day = x.getDay(); const diff = (day === 0 ? -6 : 1) - day; x.setDate(x.getDate()+diff); x.setHours(0,0,0,0); return x; };
+    const endMonday = mondayOf(end);
+    const weekStarts = [];
+    for (let i = weeks-1; i >= 0; i--) { const dt = new Date(endMonday); dt.setDate(dt.getDate() - 7*i); weekStarts.push(dt); }
+    const fmt = (d) => d.toISOString().slice(0,10);
+
+    const headers = srHeaders();
+    // Clients
+    const cRes = await fetch(restUrl('user_profiles?select=id,full_name,email,utente_attivo&order=full_name.asc'), { headers });
+    const clients = cRes.ok ? await cRes.json() : [];
+    const active_count = clients.filter(c => !!c.utente_attivo).length;
+    const inactive_count = clients.length - active_count;
+
+    const userIds = clients.map(c => c.id);
+    if (!userIds.length) return res.json({ active_count, inactive_count, weeks: weekStarts.map(fmt), clients: [] });
+
+    // Fetch workout logs in the whole range covering these weeks
+    const startRange = fmt(weekStarts[0]);
+    const endRange = fmt(new Date(weekStarts[weekStarts.length-1].getTime() + 6*24*60*60*1000));
+    const inList = userIds.map(encodeURIComponent).join(',');
+    const wlUrl = restUrl(`workout_logs?user_id=in.(${inList})&workout_date=gte.${encodeURIComponent(startRange)}&workout_date=lte.${encodeURIComponent(endRange)}&select=user_id,workout_date,status`);
+    const wlRes = await fetch(wlUrl, { headers });
+    const logs = wlRes.ok ? await wlRes.json() : [];
+
+    // Index logs by user and week
+    const startToIdx = new Map(weekStarts.map((d,i)=> [fmt(d), i]));
+    const weekIdxOf = (dateStr) => {
+      const d = new Date(dateStr);
+      const m = mondayOf(d);
+      return startToIdx.get(fmt(m));
+    };
+    const byUser = new Map(userIds.map(id => [id, { weeks: Array(weeks).fill(null).map(()=> ({ planned:0, completed:0 })), total:{planned:0,completed:0} }]));
+    for (const l of logs) {
+      const idx = weekIdxOf(l.workout_date);
+      if (idx == null) continue;
+      const row = byUser.get(l.user_id);
+      if (!row) continue;
+      row.weeks[idx].planned += 1;
+      row.total.planned += 1;
+      if ((l.status||'').toLowerCase() === 'completed') { row.weeks[idx].completed += 1; row.total.completed += 1; }
+    }
+
+    const clientsOut = clients.map(c => {
+      const row = byUser.get(c.id) || { weeks: Array(weeks).fill({planned:0,completed:0}), total:{planned:0,completed:0} };
+      const weekly = row.weeks.map((w, i) => ({
+        week: fmt(weekStarts[i]),
+        status: w.planned === 0 ? 'none' : (w.completed >= w.planned ? 'done' : 'miss')
+      }));
+      const adherence = row.total.planned ? Math.round((row.total.completed/row.total.planned) * 100) : 0;
+      // Trend: last half vs previous half
+      const half = Math.floor(weeks/2);
+      let a1p=0,a1c=0,a2p=0,a2c=0;
+      row.weeks.forEach((w, i) => { if (i < weeks-half) { a1p+=w.planned; a1c+=w.completed; } else { a2p+=w.planned; a2c+=w.completed; } });
+      const t1 = a1p ? (a1c/a1p) : 0; const t2 = a2p ? (a2c/a2p) : 0; const trendDelta = Math.round((t2 - t1) * 100);
+      return { id: c.id, name: c.full_name || c.email || 'Cliente', email: c.email, active: !!c.utente_attivo, weekly, adherence, trendDelta };
+    });
+
+    res.json({ active_count, inactive_count, weeks: weekStarts.map(fmt), clients: clientsOut });
+  } catch (e) {
+    console.error('trainer/dashboard/overview error', e);
+    res.status(500).json({ error: 'Failed to compute overview' });
+  }
+});
