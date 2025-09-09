@@ -7,66 +7,450 @@
   <base href="/gymtracker/">
   <link rel="stylesheet" href="shared/css/shared.css">
   <link rel="stylesheet" href="trainer/css/trainer.css">
+  <style>
+    /* Layout principale modernizzato */
+    .clients-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .clients-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .clients-header h1 {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+    }
+
+    /* Card principale modernizzata */
+    .client-selection-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .client-selection-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12), 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .card-header-modern {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: #374151;
+      padding: 24px;
+      border-bottom: 3px solid #10b981;
+      position: relative;
+    }
+
+    .card-header-modern::before {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%);
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+    }
+
+    .header-icon {
+      font-size: 1.5rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .header-title h3 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .card-content {
+      padding: 32px;
+    }
+
+    /* Sezione di selezione cliente */
+    .client-selection-section {
+      margin-bottom: 24px;
+    }
+
+    .selection-label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    .client-select-modern {
+      width: 100%;
+      max-width: 480px;
+      padding: 14px 18px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .client-select-modern:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15), 0 4px 12px rgba(16, 185, 129, 0.1);
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+    }
+
+    .client-select-modern:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Suggerimento */
+    .client-hint {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+      border-radius: 12px;
+      border-left: 4px solid #10b981;
+      margin: 20px 0;
+      position: relative;
+    }
+
+    .client-hint::before {
+      content: '💡';
+      position: absolute;
+      left: -2px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.2rem;
+      background: white;
+      padding: 4px;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Sezione azioni */
+    .actions-section {
+      display: flex;
+      gap: 16px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      flex: 1;
+      min-width: 200px;
+      padding: 16px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .action-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .action-btn:hover::before {
+      left: 100%;
+    }
+
+    .btn-schede {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-schede:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-calendario {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-calendario:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-icon {
+      font-size: 1.2rem;
+    }
+
+    /* Effetto di caricamento */
+    .loading-state {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .loading-state::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(16, 185, 129, 0.3);
+      border-top: 3px solid #10b981;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .clients-container {
+        padding: 16px;
+      }
+      
+      .clients-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+      
+      .clients-header h1 {
+        font-size: 1.5rem;
+      }
+      
+      .card-content {
+        padding: 24px;
+      }
+      
+      .client-select-modern {
+        max-width: none;
+      }
+      
+      .actions-section {
+        flex-direction: column;
+      }
+      
+      .action-btn {
+        min-width: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card-content {
+        padding: 16px;
+      }
+      
+      .card-header-modern {
+        padding: 16px;
+      }
+      
+      .header-title h3 {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <div data-include="shared/partials/header.html"></div>
-  <main class="clients-container" style="max-width:900px; margin:0 auto; padding:20px;">
-    <div class="clients-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+  <main class="clients-container">
+    <div class="clients-header">
       <h1>👤 Gestione Clienti</h1>
       <a href="trainer/dashboard.html" class="btn-secondary">← Torna alla Dashboard</a>
     </div>
-
-    <div class="card">
-      <div class="card-header"><h3>Seleziona cliente</h3></div>
-      <div class="form-group inline">
-        <label for="clientSelect">Cliente</label>
-        <select id="clientSelect" class="w-full" style="max-width:480px;"></select>
+    
+    <div class="client-selection-card">
+      <div class="card-header-modern">
+        <div class="header-title">
+          <span class="header-icon">👥</span>
+          <h3>Selezione Cliente</h3>
+        </div>
       </div>
-      <div id="clientHint" style="color:#6c757d; font-size:14px;">
-        Seleziona un cliente per procedere con la gestione dettagliata (schede, calendario, scadenze…)
-      </div>
-      <div class="flex" style="gap:10px; margin-top:12px;">
-        <button class="btn-primary" onclick="openSchede()">Apri Schede</button>
-        <button class="btn-secondary" onclick="openCalendario()">Apri Calendario</button>
+      
+      <div class="card-content">
+        <div class="client-selection-section">
+          <label for="clientSelect" class="selection-label">Seleziona cliente da gestire</label>
+          <select id="clientSelect" class="client-select-modern">
+            <option value="">Caricamento clienti...</option>
+          </select>
+        </div>
+        
+        <div id="clientHint" class="client-hint">
+          Seleziona un cliente per procedere con la gestione dettagliata delle schede di allenamento, pianificazione calendario e monitoraggio scadenze.
+        </div>
+        
+        <div class="actions-section">
+          <button class="action-btn btn-schede" onclick="openSchede()">
+            <span class="btn-icon">📋</span>
+            Gestisci Schede Allenamento
+          </button>
+          <button class="action-btn btn-calendario" onclick="openCalendario()">
+            <span class="btn-icon">📅</span>
+            Pianifica Calendario
+          </button>
+        </div>
       </div>
     </div>
   </main>
+  
   <div data-include="shared/partials/footer.html"></div>
-
   <script src="shared/js/core/api.js"></script>
   <script src="shared/js/include.js"></script>
   <script src="shared/js/core/utils.js"></script>
   <script>
     async function ensureTrainer() {
       const token = GymAPI.getToken();
-      if (!token) { window.location.href = '/gymtracker/utente/'; return; }
+      if (!token) { 
+        window.location.href = '/gymtracker/utente/'; 
+        return; 
+      }
       const u = await GymAPI.getCurrentUser();
       const role = (u?.profile?.user_type || u?.user_type || '').toString().toLowerCase();
-      if (role !== 'admin') { alert('Accesso riservato agli amministratori'); window.location.href = '/gymtracker/utente/dashboard.html'; }
+      if (role !== 'admin') { 
+        alert('Accesso riservato agli amministratori'); 
+        window.location.href = '/gymtracker/utente/dashboard.html'; 
+      }
     }
-
+    
     async function loadClients() {
       const select = document.getElementById('clientSelect');
-      select.innerHTML = '<option>Caricamento...</option>';
-      const data = await GymAPI.get('/trainer/clients?active=all');
-      const clients = Array.isArray(data.clients) ? data.clients : [];
-      if (!clients.length) { select.innerHTML = '<option>Nessun cliente</option>'; return; }
-      select.innerHTML = clients.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.full_name || c.email || 'Cliente')}</option>`).join('');
-
-      // Preseleziona "Stefano Nidec" se presente
-      const pref = clients.find(c => /stefano\s+nidec/i.test((c.full_name||'') + ' ' + (c.email||'')));
-      if (pref) select.value = pref.id;
-      // Oppure da query ?user_id=...
-      const q = new URLSearchParams(location.search);
-      const qUser = q.get('user_id');
-      if (qUser && clients.some(c => c.id === qUser)) select.value = qUser;
+      const card = document.querySelector('.client-selection-card');
+      
+      // Stato di caricamento
+      select.innerHTML = '<option>🔄 Caricamento clienti...</option>';
+      select.disabled = true;
+      card.classList.add('loading-state');
+      
+      try {
+        const data = await GymAPI.get('/trainer/clients?active=all');
+        const clients = Array.isArray(data.clients) ? data.clients : [];
+        
+        if (!clients.length) { 
+          select.innerHTML = '<option>❌ Nessun cliente disponibile</option>';
+          return; 
+        }
+        
+        // Popola la select con i clienti
+        select.innerHTML = '<option value="">-- Seleziona un cliente --</option>' + 
+          clients.map(c => `<option value="${c.id}">👤 ${Utils.escapeHtml(c.full_name || c.email || 'Cliente')}</option>`).join('');
+        
+        // Preseleziona "Stefano Nidec" se presente
+        const pref = clients.find(c => /stefano\s+nidec/i.test((c.full_name||'') + ' ' + (c.email||'')));
+        if (pref) select.value = pref.id;
+        
+        // Oppure da query ?user_id=...
+        const q = new URLSearchParams(location.search);
+        const qUser = q.get('user_id');
+        if (qUser && clients.some(c => c.id === qUser)) select.value = qUser;
+        
+        // Aggiorna il hint se c'è un cliente selezionato
+        updateClientHint();
+        
+      } catch (error) {
+        console.error('Errore caricamento clienti:', error);
+        select.innerHTML = '<option>❌ Errore nel caricamento</option>';
+      } finally {
+        select.disabled = false;
+        card.classList.remove('loading-state');
+      }
     }
-
-    function openSchede(){ const id = document.getElementById('clientSelect').value; if (!id) return alert('Seleziona un cliente'); window.location.href = `trainer/schede.html?user_id=${encodeURIComponent(id)}`; }
-    function openCalendario(){ const id = document.getElementById('clientSelect').value; if (!id) return alert('Seleziona un cliente'); window.location.href = `trainer/calendario.html?user_id=${encodeURIComponent(id)}`; }
-
-    (async function init(){
-      try { await ensureTrainer(); await loadClients(); } catch(e){ console.error(e); }
+    
+    function updateClientHint() {
+      const select = document.getElementById('clientSelect');
+      const hint = document.getElementById('clientHint');
+      
+      if (select.value) {
+        const selectedText = select.options[select.selectedIndex].text.replace('👤 ', '');
+        hint.innerHTML = `Cliente selezionato: <strong>${selectedText}</strong><br>
+          Ora puoi procedere con la gestione delle schede di allenamento o la pianificazione del calendario.`;
+        hint.style.borderLeftColor = '#10b981';
+      } else {
+        hint.innerHTML = 'Seleziona un cliente per procedere con la gestione dettagliata delle schede di allenamento, pianificazione calendario e monitoraggio scadenze.';
+        hint.style.borderLeftColor = '#6b7280';
+      }
+    }
+    
+    function openSchede() { 
+      const id = document.getElementById('clientSelect').value; 
+      if (!id) {
+        alert('⚠️ Seleziona prima un cliente dalla lista');
+        document.getElementById('clientSelect').focus();
+        return;
+      }
+      window.location.href = `trainer/schede.html?user_id=${encodeURIComponent(id)}`; 
+    }
+    
+    function openCalendario() { 
+      const id = document.getElementById('clientSelect').value; 
+      if (!id) {
+        alert('⚠️ Seleziona prima un cliente dalla lista');
+        document.getElementById('clientSelect').focus();
+        return;
+      }
+      window.location.href = `trainer/calendario.html?user_id=${encodeURIComponent(id)}`; 
+    }
+    
+    // Event listener per aggiornare il hint quando cambia selezione
+    document.addEventListener('DOMContentLoaded', function() {
+      const select = document.getElementById('clientSelect');
+      select.addEventListener('change', updateClientHint);
+    });
+    
+    (async function init() {
+      try { 
+        await ensureTrainer(); 
+        await loadClients(); 
+      } catch(e) { 
+        console.error('Errore inizializzazione:', e); 
+      }
     })();
   </script>
 </body>

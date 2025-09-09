@@ -4,6 +4,12 @@ const { Pool } = require('pg');
 
 const router = express.Router();
 
+// Diagnostics: which Supabase key mode is being used for trainer endpoints
+try {
+  const keyMode = process.env.SUPABASE_SERVICE_ROLE_KEY ? 'service-role' : 'anon-key';
+  console.log(`[Trainer API] Supabase key mode: ${keyMode}`);
+} catch {}
+
 // Optional direct Postgres access (bypasses Supabase REST schema cache issues)
 let pgPool = null;
 const pgConnStr = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;

@@ -23,6 +23,300 @@
     .exercise { display:flex; gap: 8px; align-items:center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
     .exercise:last-child { border-bottom: none; }
     .plus { cursor:pointer; padding: 4px 8px; border-radius: 4px; border:1px solid #10b981; color:#065f46; background:#ecfdf5; }
+
+    /* Stili migliorati per la sezione clienti */
+    .client-selector-panel {
+      width: 320px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: #374151;
+      padding: 20px;
+      border-bottom: 3px solid #10b981;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .panel-icon {
+      font-size: 1.5rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .panel-title h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .modern-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .modern-select:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .modern-select:hover {
+      border-color: #cbd5e1;
+    }
+
+    .client-selection-section {
+      padding: 24px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .modern-label {
+      display: block;
+    }
+
+    .label-text {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .primary-select {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+    }
+
+    .primary-select:focus {
+      border-color: #059669;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .client-status-section {
+      padding: 24px;
+      border-bottom: 1px solid #f1f5f9;
+      background: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
+    }
+
+    .status-control {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-info {
+      flex: 1;
+    }
+
+    .status-label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .status-description {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    /* Toggle Switch moderno */
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-switch input[type="checkbox"] {
+      display: none;
+    }
+
+    .toggle-slider {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      background: #d1d5db;
+      border-radius: 28px;
+      transition: all 0.3s ease;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .toggle-switch input[type="checkbox"]:checked + .toggle-slider {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    }
+
+    .toggle-switch input[type="checkbox"]:checked + .toggle-slider::before {
+      transform: translateX(24px);
+    }
+
+    .toggle-switch:hover .toggle-slider {
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15), 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+
+    .toggle-label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+    }
+
+    .panel-actions {
+      padding: 24px;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+
+    .create-plan-btn {
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+      transition: all 0.3s ease;
+    }
+
+    .create-plan-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-icon {
+      font-size: 1.1rem;
+    }
+
+    /* Sezione schede migliorata */
+    .plans-section {
+      flex: 1;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+
+    .section-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 16px 20px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-icon {
+      font-size: 1.3rem;
+    }
+
+    .section-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .plans-list {
+      padding: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* Miglioramento degli elementi scheda */
+    .plan-item {
+      padding: 16px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      margin-bottom: 12px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .plan-item:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .plan-item.active {
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+      border-color: #10b981;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .plan-item.active::before {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #10b981;
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* Miglioramento responsiveness */
+    @media (max-width: 768px) {
+      .client-selector-panel {
+        width: 100%;
+        margin-bottom: 16px;
+      }
+      
+      .layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      
+      .flex {
+        flex-direction: column;
+        gap: 16px !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -38,31 +332,59 @@
       <section class="plans" style="grid-column: 1 / -1;">
         <!-- Riga superiore: a sinistra combo clienti (con filtro), a destra elenco schede -->
         <div class="flex" style="gap:16px; align-items:flex-start;">
-          <div style="width:320px;">
-            <div class="flex-between mb-2">
-              <strong>Clienti</strong>
-              <select id="filterActive" class="filter-select" onchange="loadClients()">
-                <option value="all">Tutti</option>
-                <option value="true" selected>Attivi</option>
-                <option value="false">Disattivati</option>
+          <div class="client-selector-panel">
+            <!-- Header della sezione clienti -->
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="panel-icon">👥</span>
+                <h3>Gestione Clienti</h3>
+              </div>
+              <select id="filterActive" class="modern-select" onchange="loadClients()">
+                <option value="all">Tutti i clienti</option>
+                <option value="true" selected>Solo attivi</option>
+                <option value="false">Solo disattivati</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Seleziona cliente</label>
-              <select id="clientSelect" class="filter-select" onchange="onClientChange()">
-                <option value="">-- Seleziona --</option>
-              </select>
+
+            <!-- Selezione cliente -->
+            <div class="client-selection-section">
+              <label class="modern-label">
+                <span class="label-text">Cliente selezionato</span>
+                <select id="clientSelect" class="modern-select primary-select" onchange="onClientChange()">
+                  <option value="">-- Seleziona un cliente --</option>
+                </select>
+              </label>
             </div>
-            <div class="form-group">
-              <label style="display:block;">Stato cliente</label>
-              <label style="font-size:12px; color:#64748b; margin-right:6px;">attivo</label>
-              <input type="checkbox" id="clientActiveToggle" onchange="onClientActiveToggleChange(this.checked)" />
+
+            <!-- Controllo stato cliente -->
+            <div class="client-status-section">
+              <div class="status-control">
+                <div class="status-info">
+                  <span class="status-label">Stato account cliente</span>
+                  <span class="status-description">Attiva/disattiva l'accesso del cliente</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="clientActiveToggle" onchange="onClientActiveToggleChange(this.checked)" />
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Attivo</span>
+                </label>
+              </div>
             </div>
-            <button class="plus" onclick="createPlan()">+ Nuova scheda</button>
+
+            <!-- Azioni -->
+            <div class="panel-actions">
+              <button class="btn btn-primary create-plan-btn" onclick="createPlan()">
+                <span class="btn-icon">📋</span>
+                Nuova Scheda Allenamento
+              </button>
+            </div>
           </div>
-          <div style="flex:1;">
-            <div><strong>Schede cliente</strong></div>
-            <div id="plansList" class="mt-1"></div>
+          <div class="plans-section">
+            <div class="section-header">
+              <span class="section-icon">📊</span>
+              <h3>Schede Allenamento</h3>
+            </div>
+            <div id="plansList" class="plans-list"></div>
           </div>
         </div>
 
@@ -302,11 +624,11 @@
         name: document.getElementById(`ex_${id}_name`).value,
         sets_count: parseInt(document.getElementById(`ex_${id}_sets`).value||'3',10),
         reps_min: parseInt(document.getElementById(`ex_${id}_rmin`).value||'8',10),
-        reps_max: parseInt(document.getElementById(`ex_${id}_rmax`).value||'12',10),
-        weight_suggested: parseFloat(document.getElementById(`ex_${id}_kg`).value||'0'),
-        rest_seconds: parseInt(document.getElementById(`ex_${id}_rest`).value||'90',10),
-        intensity: parseInt(document.getElementById(`ex_${id}_int`).value||'0',10),
-        external_url: (document.getElementById(`ex_${id}_url`).value||'').trim() || null
+        reps_max: parseInt(document.getElementById(`ex_${e.id}_rmax`).value||'12',10),
+        weight_suggested: parseFloat(document.getElementById(`ex_${e.id}_kg`).value||'0'),
+        rest_seconds: parseInt(document.getElementById(`ex_${e.id}_rest`).value||'90',10),
+        intensity: parseInt(document.getElementById(`ex_${e.id}_int`).value||'0',10),
+        external_url: (document.getElementById(`ex_${e.id}_url`).value||'').trim() || null
       };
       const t = GymAPI.getToken();
       const r = await fetch(`${GymAPI.baseURL}/trainer/exercises/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });

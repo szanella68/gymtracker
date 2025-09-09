@@ -48,8 +48,11 @@
       const p = Object.keys(hashParams).length ? hashParams : queryParams;
 
       const isSupabase = storeIfSupabaseTokens(p);
-      if (isSupabase && p.access_token && window.GymAPI) {
-        try { GymAPI.setToken(p.access_token); } catch {}
+      if (isSupabase && window.GymAPI) {
+        try {
+          if (p.access_token) GymAPI.setToken(p.access_token);
+          if (p.refresh_token) GymAPI.setRefreshToken(p.refresh_token);
+        } catch {}
       }
 
       // Optional: honor ?redirect=/path

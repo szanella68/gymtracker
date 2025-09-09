@@ -317,12 +317,13 @@
 }
 
 /* Dashboard vertical sections */
-.gantt-weeks { display:flex; gap:6px; margin-bottom:8px; color:#6c757d; font-size:12px; }
+.gantt-container { overflow-x: auto; padding-bottom: 6px; }
+.gantt-weeks { display:flex; gap:6px; margin-bottom:8px; color:#6c757d; font-size:12px; min-width: 100%; }
 .gantt-weeks .w { width: 60px; text-align:center; }
 .gantt-grid { max-height: 420px; overflow-y: auto; border:1px solid #e9ecef; border-radius:8px; }
 .gantt-row { display:flex; align-items:center; gap:8px; padding:8px; border-bottom:1px solid #f1f3f5; }
 .gantt-name { min-width: 220px; font-weight:600; color:#334155; }
-.gantt-cells { display:flex; gap:6px; }
+.gantt-cells { display:flex; gap:6px; min-width: 100%; }
 .gantt-cell { width:60px; height:18px; border-radius:4px; background:#e9ecef; }
 .gantt-cell.done { background:#10b981; }
 .gantt-cell.miss { background:#ef4444; }

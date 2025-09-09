@@ -13,10 +13,7 @@
     <main class="trainer-dashboard">
         <div class="dashboard-header">
             <h1>🧑‍🏫 Dashboard Trainer</h1>
-            <div class="trainer-actions">
-                <button onclick="showNewClientModal()" class="btn-primary">+ Nuovo Cliente</button>
-                <button onclick="logout()" class="btn-logout">Esci</button>
-            </div>
+            <div class="trainer-actions"></div>
         </div>
 
         <!-- Trainer Stats (ripristinati) -->
@@ -95,8 +92,10 @@
         <!-- 2) Gantt settimanale per clienti -->
         <div class="card">
             <div class="card-header"><h3>🗂️ Piano settimanale (fatto/da fare)</h3></div>
-            <div id="ganttWeeks" class="gantt-weeks"></div>
-            <div id="ganttGrid" class="gantt-grid"></div>
+            <div class="gantt-container">
+                <div id="ganttWeeks" class="gantt-weeks"></div>
+                <div id="ganttGrid" class="gantt-grid"></div>
+            </div>
         </div>
 
         <!-- 3) Pareto puntualità -->
@@ -233,22 +232,29 @@
         }
 
         async function loadOverview(){
-            const weeks = 8;
+            const weeks = 24;
             const data = await GymAPI.get(`/trainer/dashboard/overview?weeks=${weeks}`);
             // Pie
-            document.getElementById('activeCount').textContent = data.active_count;
-            document.getElementById('inactiveCount').textContent = data.inactive_count;
-            renderPie('clientsPie', data.active_count, data.inactive_count);
+            (function(e){if(e) e.textContent = data.active_count;})(document.getElementById('activeCount'));
+            (function(e){if(e) e.textContent = data.inactive_count;})(document.getElementById('inactiveCount'));
+            (function(el){ if(el) renderPie('clientsPie', data.active_count, data.inactive_count); })(document.getElementById('clientsPie'));
             // Gantt headers
             const gw = document.getElementById('ganttWeeks');
-            gw.innerHTML = data.weeks.map(w => `<div class="w">${new Date(w).toLocaleDateString('it-IT', { month:'2-digit', day:'2-digit' })}</div>`).join('');
+            if (gw) {
+                gw.innerHTML = data.weeks.map(w => `<div class="w">${new Date(w).toLocaleDateString('it-IT', { month:'2-digit', day:'2-digit' })}</div>`).join('');
+                const totalW = weeks*60 + (weeks-1)*6;
+                gw.style.minWidth = totalW + 'px';
+            }
             // Gantt rows
             const grid = document.getElementById('ganttGrid');
-            grid.innerHTML = data.clients.map(c => `
+            if (grid) {
+                const totalW = weeks*60 + (weeks-1)*6;
+                grid.innerHTML = data.clients.map(c => `
                 <div class="gantt-row">
                     <div class="gantt-name">${Utils.escapeHtml(c.name)}</div>
-                    <div class="gantt-cells">${c.weekly.map(x => `<div class="gantt-cell ${x.status}"></div>`).join('')}</div>
+                    <div class="gantt-cells" style="min-width:${totalW}px">${c.weekly.map(x => `<div class="gantt-cell ${x.status}"></div>`).join('')}</div>
                 </div>`).join('');
+            }
             // Pareto punctuality (top 10)
             const byAdh = [...data.clients].sort((a,b)=> (b.adherence||0) - (a.adherence||0)).slice(0,10);
             renderPareto('paretoPunctual', byAdh, v => v.adherence, '%', false);
@@ -258,9 +264,9 @@
             // Laggards
             const worst = [...data.clients].sort((a,b)=> (a.adherence||0)-(b.adherence||0)).slice(0,10);
             renderPareto('paretoLaggards', worst, v => v.adherence, '%', true);
-            // Client select
+            // Client select (se presente in pagina)
             const sel = document.getElementById('clientSelect');
-            sel.innerHTML = data.clients.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.name)}</option>`).join('');
+            if (sel) sel.innerHTML = data.clients.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.name)}</option>`).join('');
         }
 
         function renderPie(elId, act, inact){
@@ -281,6 +287,7 @@
 
         function renderPareto(elId, arr, valFn, suffix, invert){
             const box = document.getElementById(elId);
+            if (!box) return;
             box.innerHTML = arr.map(c => {
                 const v = Math.max(0, Math.min(100, valFn(c) || 0));
                 return `<div class="pareto-item">
