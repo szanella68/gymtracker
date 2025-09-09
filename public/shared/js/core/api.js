@@ -12,16 +12,23 @@ class GymAPI {
   static getToken() {
     return localStorage.getItem('gymtracker_token');
   }
+  static getRefreshToken() {
+    return localStorage.getItem('gymtracker_refresh');
+  }
   
   // Set auth token to localStorage
   static setToken(token) {
     localStorage.setItem('gymtracker_token', token);
+  }
+  static setRefreshToken(token) {
+    if (token) localStorage.setItem('gymtracker_refresh', token);
   }
   
   // Remove auth token from localStorage
   static removeToken() {
     localStorage.removeItem('gymtracker_token');
     localStorage.removeItem('gymtracker_user');
+    localStorage.removeItem('gymtracker_refresh');
   }
   
   // Make authenticated request
@@ -43,13 +50,36 @@ class GymAPI {
     }
     
     try {
-      const response = await fetch(url, config);
+      let response = await fetch(url, config);
       
       // Handle authentication errors globally
       if (response.status === 401) {
-        this.removeToken();
-        window.location.href = '/gymtracker/utente/';
-        throw new Error('Authentication required');
+        // Try refresh once if we have refresh token
+        const rt = this.getRefreshToken();
+        if (rt) {
+          try {
+            const ref = await fetch(`${this.baseURL}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh_token: rt })
+            });
+            if (ref.ok) {
+              const rj = await ref.json();
+              const newToken = rj?.session?.access_token;
+              if (newToken) {
+                this.setToken(newToken);
+                // retry original request once with new token
+                config.headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(url, config);
+              }
+            }
+          } catch {}
+        }
+        if (response.status === 401) {
+          this.removeToken();
+          window.location.href = '/gymtracker/utente/';
+          throw new Error('Authentication required');
+        }
       }
       
       // Parse JSON response
@@ -105,6 +135,8 @@ class GymAPI {
     if (response.session?.access_token) {
       this.setToken(response.session.access_token);
       localStorage.setItem('gymtracker_user', JSON.stringify(response.user));
+      // store refresh token if present
+      if (response.session.refresh_token) this.setRefreshToken(response.session.refresh_token);
     }
     return response;
   }
@@ -114,6 +146,7 @@ class GymAPI {
     if (response.session?.access_token) {
       this.setToken(response.session.access_token);
       localStorage.setItem('gymtracker_user', JSON.stringify(response.user));
+      if (response.session.refresh_token) this.setRefreshToken(response.session.refresh_token);
     }
     return response;
   }

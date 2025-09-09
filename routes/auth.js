@@ -88,6 +88,7 @@ router.post('/login', async (req, res) => {
 
   const accessToken = data.access_token;
   const expiresIn = data.expires_in;
+  const refreshToken = data.refresh_token;
 
     // fetch user for mapping
   const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -126,7 +127,7 @@ router.post('/login', async (req, res) => {
         full_name: (supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || supaUser.email),
         user_type: metaRole === 'admin' ? 'admin' : 'standard'
       },
-      session: { access_token: accessToken, expires_in: String(expiresIn) }
+      session: { access_token: accessToken, refresh_token: refreshToken || null, expires_in: String(expiresIn) }
     });
   } catch (error) {
     console.error('Login error:', error);
