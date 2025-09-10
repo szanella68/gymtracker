@@ -416,6 +416,50 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 });
 ```
 
+### Gestione Ruoli Admin
+
+**IMPORTANTE:** Il sistema determina i ruoli admin tramite i **user metadata** di Supabase, non tramite campi database personalizzati.
+
+#### Come Creare un Admin
+
+Per rendere un utente admin, aggiungi il campo `role: "admin"` nei user metadata di Supabase:
+
+1. **Via Dashboard Supabase:**
+   - Vai su Authentication > Users
+   - Seleziona l'utente
+   - In "User Metadata" aggiungi: `{"role": "admin"}`
+
+2. **Via API (per automazione):**
+```javascript
+// Usando service role key
+await supabaseAdmin.auth.admin.updateUserById(userId, {
+  user_metadata: { role: 'admin' }
+});
+```
+
+3. **Via SQL (Supabase SQL Editor):**
+```sql
+-- Aggiorna metadata per un utente specifico
+UPDATE auth.users 
+SET raw_user_meta_data = raw_user_meta_data || '{"role": "admin"}'::jsonb
+WHERE email = 'admin@example.com';
+```
+
+#### Verifica Ruolo Admin
+
+Il sistema controlla il ruolo in `middleware/auth.js`:
+
+```javascript
+// Estrae ruolo dai metadata utente
+const userMetadataRole = user.user_metadata?.role;
+const role = userMetadataRole === 'admin' ? 'admin' : 'standard';
+```
+
+#### Routing Basato su Ruoli
+
+- **Admin** (`role: "admin"`) → `/gymtracker/trainer/dashboard.html`
+- **Standard** (default) → `/gymtracker/utente/dashboard.html`
+
 ### Row Level Security (RLS)
 
 ```sql
@@ -438,6 +482,7 @@ CREATE POLICY "Users can view own schede" ON schede
     FOR SELECT USING (auth.uid() = user_id);
 
 -- Policy per trainer: accesso admin a tutto
+-- IMPORTANTE: Usa raw_user_meta_data invece di auth.users.admin
 CREATE POLICY "Trainers can manage all data" ON user_profiles
     FOR ALL USING (
         EXISTS (
@@ -593,6 +638,12 @@ curl -X POST https://zanserver.sytes.net/gymtracker/api/auth/login \
 - Controlla API keys Supabase
 - Verifica RLS policies
 - Controlla schema database aggiornato
+
+#### Problemi Ruoli Admin
+- **Admin non riconosciuto**: Controlla user metadata in Supabase Dashboard
+- **Redirect errato**: Verifica console browser per log frontend
+- **Log verifiche**: Controlla console Node.js per processo autenticazione
+- **Metadata mancanti**: Usa SQL per aggiungere `{"role": "admin"}` ai metadata
 
 ## Performance e Monitoraggio
 

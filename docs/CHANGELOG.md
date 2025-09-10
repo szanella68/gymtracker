@@ -1,5 +1,21 @@
 # Changelog Documentazione GymTracker
 
+## [1.0.1] - 2025-09-10
+
+### Changed
+- **BREAKING CHANGE**: Sistema autenticazione admin ora usa user metadata invece di tabella auth.users
+- Documentazione tecnica aggiornata con sezione "Gestione Ruoli Admin" 
+- Aggiunta sezione troubleshooting per problemi ruoli admin
+
+### Technical Changes
+- `middleware/auth.js`: Controllo ruolo da `user.user_metadata.role` invece di `auth.users.admin`
+- Frontend: Log dettagliati per debugging redirect admin
+- Risolto problema 404 su endpoint `auth.users` non accessibile via REST
+
+### Fixed
+- Risolto redirect admin che portava sempre a dashboard cliente
+- Admin ora correttamente reindirizzato a `/trainer/dashboard.html`
+
 ## [1.0.0] - 2025-01-15
 
 ### Added

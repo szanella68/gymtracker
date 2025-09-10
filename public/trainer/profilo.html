@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -529,7 +528,7 @@
           headers: { Authorization: 'Bearer ' + t }
         });
         const data = await r.json();
-        clientsData = data.clients || [];
+        clientsData = (data.clients || []);
         
         select.innerHTML = '<option value="">-- Seleziona un cliente --</option>' + 
           clientsData.map(c => `<option value="${c.id}">👤 ${Utils.escapeHtml(c.full_name || c.email || 'Cliente')}</option>`).join('');
@@ -569,7 +568,6 @@
       showClientInfo(currentClient);
       
       // Il client data da trainer/clients contiene già i dati del profilo
-      // Usa direttamente questi dati invece di fare una seconda chiamata
       currentClientProfile = currentClient;
       renderProfileForm();
     }
@@ -611,7 +609,6 @@
     function renderProfileForm() {
       if (!currentClientProfile) return;
       
-      // I dati arrivano direttamente dall'endpoint trainer/clients
       const profile = currentClientProfile;
       
       const container = document.getElementById('profileContainer');
@@ -635,9 +632,18 @@
             </div>
             <div class="card-body">
               <form id="personalForm">
-                <div class="form-group">
-                  <label for="fullName">Nome completo *</label>
-                  <input type="text" id="fullName" name="full_name" value="${Utils.escapeHtml(profile.full_name || '')}" required>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="fullName">Nome completo *</label>
+                    <input type="text" id="fullName" name="full_name" value="${Utils.escapeHtml(profile.full_name || '')}" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="utenteAttivo">Utente attivo</label>
+                    <select id="utenteAttivo" name="utente_attivo">
+                      <option value="true" ${profile.utente_attivo ? 'selected' : ''}>TRUE</option>
+                      <option value="false" ${!profile.utente_attivo ? 'selected' : ''}>FALSE</option>
+                    </select>
+                  </div>
                 </div>
                 <div class="form-row">
                   <div class="form-group">
@@ -761,14 +767,18 @@
       const submitBtn = e.target.querySelector('button[type="submit"]');
       const form = e.target;
       
-      const fields = ['full_name', 'phone', 'date_of_birth', 'gender', 'emergency_contact'];
+      const fields = ['full_name', 'utente_attivo', 'phone', 'date_of_birth', 'gender', 'emergency_contact'];
       const updateData = {};
       
       fields.forEach(name => {
         const el = form.elements[name];
         if (!el) return;
-        const val = (el.value || '').trim();
-        updateData[name] = val === '' ? null : val;
+        let val = (el.value || '').trim();
+        if (name === 'utente_attivo') {
+          updateData[name] = (val === 'true'); // converto stringa → boolean
+        } else {
+          updateData[name] = val === '' ? null : val;
+        }
       });
       
       clearMessages();
@@ -872,6 +882,7 @@
       const profile = currentClientProfile;
       
       document.getElementById('fullName').value = profile.full_name || '';
+      document.getElementById('utenteAttivo').value = profile.utente_attivo ? 'true' : 'false';
       document.getElementById('phone').value = profile.phone || '';
       document.getElementById('dateOfBirth').value = profile.date_of_birth || '';
       document.getElementById('gender').value = profile.gender || '';

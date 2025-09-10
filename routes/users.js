@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticateToken, requireAdmin, requireOwnershipOrAdmin } = require('../middleware/auth');
 const { getSupabaseClient } = require('../config/supabase');
+const webhookService = require('../services/webhookService');
 const useSupabase = true; // Supabase-only mode
 
 const router = express.Router();
@@ -42,11 +43,25 @@ router.get('/me', authenticateToken, async (req, res) => {
               'Content-Type': 'application/json',
               'Prefer': 'resolution=ignore-duplicates,return=representation'
             },
-            body: JSON.stringify({ id: supabaseId, email: req.user.email })
+            body: JSON.stringify({ id: supabaseId, email: req.user.email, utente_attivo: false })
           });
           if (resp.ok) {
             const arr = await resp.json();
             ensuredProfile = Array.isArray(arr) && arr.length ? arr[0] : null;
+            
+            // Send webhook for new profile creation (preregistered)
+            if (ensuredProfile) {
+              console.log('[Profile Creation] Sending user.preregistered webhook');
+              webhookService.sendUserPreregistered({
+                userId: supabaseId,
+                email: req.user.email,
+                name: req.user.full_name || null,
+                phone: null,
+                registrationDate: ensuredProfile.created_at
+              }).catch(err => {
+                console.error('Webhook error on profile preregistration:', err);
+              });
+            }
           }
         } catch {}
       }
@@ -151,6 +166,73 @@ router.put('/me', authenticateToken, async (req, res) => {
       }
       const arr = await resp.json();
       const up = Array.isArray(arr) && arr.length ? arr[0] : null;
+
+      // Send webhook for profile completion and activation
+      if (up) {
+        const isProfileComplete = !!(full_name && phone);
+        
+        // Get current profile state before update 
+        try {
+          const checkUrl = `${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(supabaseId)}&select=full_name,phone,utente_attivo`;
+          const checkResp = await fetch(checkUrl, {
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': authHeader }
+          });
+          
+          if (checkResp.ok) {
+            const checkArr = await checkResp.json();
+            const previousProfile = Array.isArray(checkArr) && checkArr.length ? checkArr[0] : null;
+            const wasIncompleteProfile = !(previousProfile?.full_name && previousProfile?.phone);
+            const wasInactive = !previousProfile?.utente_attivo;
+            
+            console.log(`[Profile Update] isProfileComplete: ${isProfileComplete}, wasIncomplete: ${wasIncompleteProfile}, wasInactive: ${wasInactive}`);
+            
+            // If profile becomes complete for FIRST time, activate user and send registered webhook
+            if (isProfileComplete && wasIncompleteProfile) {
+              console.log('[Profile Update] First time profile completion - Activating user and sending webhook');
+              
+              // Activate user (set utente_attivo = true)
+              payload.utente_attivo = true;
+              
+              // Update with activation
+              const updateResp = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(supabaseId)}`, {
+                method: 'PATCH',
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': authHeader,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({ utente_attivo: true })
+              });
+              
+              webhookService.sendUserRegistered({
+                userId: supabaseId,
+                email: req.user.email,
+                name: up.full_name,
+                phone: up.phone,
+                dateOfBirth: up.date_of_birth,
+                gender: up.gender,
+                heightCm: up.height_cm,
+                weightKg: up.weight_kg,
+                fitnessGoal: up.fitness_goal,
+                experienceLevel: up.experience_level,
+                medicalNotes: up.medical_notes,
+                emergencyContact: up.emergency_contact,
+                profileCompletedAt: new Date().toISOString(),
+                userActive: true
+              }).catch(err => {
+                console.error('Webhook error on profile completion:', err);
+              });
+            } else if (isProfileComplete && !wasIncompleteProfile) {
+              console.log('[Profile Update] Profile already complete - webhook not sent');
+            } else {
+              console.log('[Profile Update] Profile not complete - webhook not sent');
+            }
+          }
+        } catch (error) {
+          console.error('[Profile Update] Error checking previous profile state:', error);
+        }
+      }
 
       res.json({ message: 'Profile updated successfully', profile: {
         full_name: full_name || req.user.full_name,
@@ -904,11 +986,82 @@ router.get('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Admin only: Update user
+// Admin only: Update user (including activation/deactivation)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    // TODO: implement admin update via Supabase
-    return res.status(501).json({ error: 'Admin update not implemented for Supabase yet' });
+    const userId = req.params.id;
+    const { utente_attivo } = req.body;
+    
+    if (typeof utente_attivo !== 'boolean') {
+      return res.status(400).json({ error: 'utente_attivo must be a boolean' });
+    }
+
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+    const authHeader = req.headers['authorization'] || '';
+    
+    // Get current user state
+    const currentResp = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(userId)}&select=id,email,full_name,phone,utente_attivo`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': authHeader }
+    });
+    const currentArr = await currentResp.json();
+    if (!currentResp.ok || !Array.isArray(currentArr) || !currentArr.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const currentUser = currentArr[0];
+    
+    // Update user status
+    const updateResp = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ utente_attivo })
+    });
+    
+    if (!updateResp.ok) {
+      const txt = await updateResp.text().catch(() => '');
+      return res.status(500).json({ error: 'Failed to update user status', details: txt });
+    }
+    
+    const updatedArr = await updateResp.json();
+    const updatedUser = Array.isArray(updatedArr) && updatedArr.length ? updatedArr[0] : null;
+    
+    // Send webhook if status changed
+    if (currentUser.utente_attivo !== utente_attivo) {
+      console.log(`[Admin] User ${userId} status changed from ${currentUser.utente_attivo} to ${utente_attivo}`);
+      
+      if (utente_attivo) {
+        console.log('[Admin] Sending user.activated webhook');
+        webhookService.sendUserActivated({
+          userId: userId,
+          email: currentUser.email,
+          name: currentUser.full_name,
+          phone: currentUser.phone,
+          activatedAt: new Date().toISOString(),
+          activatedBy: req.user.email
+        }).catch(err => {
+          console.error('Webhook error on user activation:', err);
+        });
+      } else {
+        console.log('[Admin] Sending user.deactivated webhook');
+        webhookService.sendUserDeactivated({
+          userId: userId,
+          email: currentUser.email,
+          name: currentUser.full_name,
+          phone: currentUser.phone,
+          deactivatedAt: new Date().toISOString(),
+          deactivatedBy: req.user.email
+        }).catch(err => {
+          console.error('Webhook error on user deactivation:', err);
+        });
+      }
+    }
+    
+    res.json({ message: 'User status updated successfully', user: updatedUser });
 
   } catch (error) {
     console.error('Update user error:', error);

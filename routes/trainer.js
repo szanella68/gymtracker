@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { Pool } = require('pg');
+const webhookService = require('../services/webhookService');
 
 const router = express.Router();
 
@@ -67,6 +68,25 @@ router.put('/clients/:id', authenticateToken, requireAdmin, async (req, res) => 
       'fitness_goal','experience_level','medical_notes','emergency_contact',
       'utente_attivo','profile_picture_url'
     ];
+    
+    // Get current client state for webhook comparison
+    let currentClient = null;
+    if (req.body.utente_attivo !== undefined) {
+      try {
+        const currentResp = await fetch(restUrl(`user_profiles?id=eq.${encodeURIComponent(id)}&select=id,email,full_name,phone,utente_attivo`), {
+          headers: srHeaders()
+        });
+        if (currentResp.ok) {
+          const currentArr = await currentResp.json();
+          if (Array.isArray(currentArr) && currentArr.length) {
+            currentClient = currentArr[0];
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching current client state:', err);
+      }
+    }
+    
     const payload = {};
     allowed.forEach(k => { if (req.body[k] !== undefined) payload[k] = req.body[k]; });
     if (Object.keys(payload).length === 0) return res.status(400).json({ error: 'No fields to update' });
@@ -78,8 +98,43 @@ router.put('/clients/:id', authenticateToken, requireAdmin, async (req, res) => 
     });
     const data = await r.json();
     if (!r.ok) return res.status(500).json({ error: 'Failed to update client', details: data });
-    res.json({ client: Array.isArray(data) ? data[0] : data });
+    
+    const updatedClient = Array.isArray(data) && data.length ? data[0] : null;
+    
+    // Send webhook if utente_attivo status changed
+    if (currentClient && updatedClient && currentClient.utente_attivo !== req.body.utente_attivo) {
+      console.log(`[Trainer] Client ${id} status changed from ${currentClient.utente_attivo} to ${req.body.utente_attivo}`);
+      
+      if (req.body.utente_attivo === true) {
+        console.log('[Trainer] Sending user.activated webhook');
+        webhookService.sendUserActivated({
+          userId: id,
+          email: currentClient.email,
+          name: currentClient.full_name,
+          phone: currentClient.phone,
+          activatedAt: new Date().toISOString(),
+          activatedBy: req.user.email
+        }).catch(err => {
+          console.error('Webhook error on user activation:', err);
+        });
+      } else if (req.body.utente_attivo === false) {
+        console.log('[Trainer] Sending user.deactivated webhook');
+        webhookService.sendUserDeactivated({
+          userId: id,
+          email: currentClient.email,
+          name: currentClient.full_name,
+          phone: currentClient.phone,
+          deactivatedAt: new Date().toISOString(),
+          deactivatedBy: req.user.email
+        }).catch(err => {
+          console.error('Webhook error on user deactivation:', err);
+        });
+      }
+    }
+    
+    res.json({ client: updatedClient });
   } catch (e) {
+    console.error('Failed to update client:', e);
     res.status(500).json({ error: 'Failed to update client' });
   }
 });
