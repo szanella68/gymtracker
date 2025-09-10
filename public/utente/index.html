@@ -201,18 +201,25 @@
         // Redirect based on user role in database
         async function redirectBasedOnRole() {
             try {
+                console.log('[Frontend] ===============================================');
+                console.log('[Frontend] CHECKING USER ROLE FOR REDIRECT');
+                
                 const userProfile = await GymAPI.getCurrentUser();
+                console.log('[Frontend] User profile received:', JSON.stringify(userProfile, null, 2));
+                
                 const userType = userProfile.profile?.user_type || 'standard';
+                console.log('[Frontend] Extracted user_type:', userType);
                 
                 if (userType === 'admin') {
-                    // Admin → Interfaccia Trainer
+                    console.log('[Frontend] ✅ USER IS ADMIN - Redirecting to trainer dashboard');
                     window.location.href = '/gymtracker/trainer/dashboard.html';
                 } else {
-                    // Standard/tutti gli altri → Interfaccia Cliente
+                    console.log('[Frontend] ❌ USER IS NOT ADMIN - Redirecting to client dashboard');
                     window.location.href = '/gymtracker/utente/dashboard.html';
                 }
+                console.log('[Frontend] ===============================================');
             } catch (error) {
-                console.error('Error checking user role:', error);
+                console.error('[Frontend] ❌ ERROR checking user role:', error);
                 
                 // Token non valido, rimuovi e resta sulla login
                 GymAPI.removeToken();
@@ -221,6 +228,7 @@
                 // perché l'utente è già sulla pagina di login
                 if (error.status !== 401) {
                     // In caso di altri errori, vai all'interfaccia cliente per default
+                    console.log('[Frontend] Fallback to client dashboard due to error');
                     window.location.href = '/gymtracker/utente/dashboard.html';
                 }
             }

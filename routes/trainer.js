@@ -40,7 +40,7 @@ router.get('/clients', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const active = (req.query.active || 'all').toLowerCase();
     const selectCols = [
-      'id','email','full_name','utente_attivo','user_type',
+      'id','email','full_name','utente_attivo',
       'phone','date_of_birth','gender','height_cm','weight_kg',
       'fitness_goal','experience_level','medical_notes','emergency_contact','profile_picture_url',
       'created_at','updated_at'

@@ -233,6 +233,20 @@ npm test  # (da implementare)
 # Aprire https://zanserver.sytes.net/gymtracker/
 ```
 
+## Documentazione
+
+### Per Stakeholder e Business
+- [Mission e Obiettivi](docs/01_mission_and_objectives.md) - Vision, target audience, roadmap
+
+### Per Developer e Tecnici  
+- [Struttura Tecnica](docs/02_technical_structure.md) - Architettura, configurazione, deployment
+- [Database Schema](docs/03_database_schema.md) - Schema Supabase, policies, query
+
+### Documentazione Esistente
+- [Deployment Guide](docs/deployment_guide.md) - Guida installazione
+- [API Documentation](docs/api_documentation.md) - Endpoint e utilizzo
+- [Contributing Guide](CONTRIBUTING.md) - Come contribuire
+
 ## 📜 Licenza
 
 MIT License - Usa e modifica liberamente per progetti personali e commerciali.

@@ -19,31 +19,55 @@ async function verifyWithSupabase(token) {
     const metaName = (user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User').trim();
 
     if (dbProvider === 'supabase') {
-      try { console.log(`[Auth] Supabase verified user email=${user.email} id=${user.id}`); } catch {}
+      console.log(`[Auth] ===============================================`);
+      console.log(`[Auth] SUPABASE LOGIN VERIFICATION`);
+      console.log(`[Auth] User Email: ${user.email}`);
+      console.log(`[Auth] User ID: ${user.id}`);
+      console.log(`[Auth] User Metadata:`, JSON.stringify(user.user_metadata, null, 2));
+      console.log(`[Auth] ===============================================`);
 
-      // IMPORTANTE: Controllo SOLO tabella user_profiles, NON metadata Auth
+      // IMPORTANTE: Controllo SOLO colonna admin in auth.users, NON tabella user_profiles
       let role = 'standard'; // Default sempre a 'standard'
       
+      // Usa service role key per accedere alla tabella auth.users
+      const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+      console.log(`[Auth] Using SERVICE_KEY: ${SERVICE_KEY ? 'Present' : 'Missing'}`);
+      console.log(`[Auth] SUPABASE_URL: ${SUPABASE_URL}`);
+      
       try {
-        const profRes = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(user.id)}&select=user_type`, {
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
+        const authUrl = `${SUPABASE_URL}/rest/v1/auth.users?id=eq.${encodeURIComponent(user.id)}&select=admin`;
+        console.log(`[Auth] Fetching admin status from: ${authUrl}`);
+        
+        const authRes = await fetch(authUrl, {
+          headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` }
         });
         
-        if (profRes.ok) {
-          const arr = await profRes.json();
-          if (Array.isArray(arr) && arr.length && arr[0]?.user_type) {
-            role = arr[0].user_type === 'admin' ? 'admin' : 'standard';
-            console.log(`[Auth] user_type from DB: ${arr[0].user_type} → role: ${role}`);
+        console.log(`[Auth] Auth response status: ${authRes.status}`);
+        console.log(`[Auth] Auth response headers:`, JSON.stringify(Object.fromEntries(authRes.headers), null, 2));
+        
+        if (authRes.ok) {
+          const arr = await authRes.json();
+          console.log(`[Auth] Auth response body:`, JSON.stringify(arr, null, 2));
+          
+          if (Array.isArray(arr) && arr.length && arr[0]?.admin === true) {
+            role = 'admin';
+            console.log(`[Auth] ✅ USER IS ADMIN - admin field: ${arr[0].admin} → role: ${role}`);
           } else {
-            console.log(`[Auth] No user_profiles record found for user ${user.id}`);
+            console.log(`[Auth] ❌ USER IS NOT ADMIN - admin field: ${arr[0]?.admin} → role: ${role}`);
           }
         } else {
-          console.log(`[Auth] Failed to fetch user_profiles: ${profRes.status}`);
+          const errorText = await authRes.text();
+          console.log(`[Auth] ❌ FAILED TO FETCH admin status - Status: ${authRes.status}`);
+          console.log(`[Auth] Error response:`, errorText);
         }
       } catch (dbError) {
-        console.error(`[Auth] Error fetching user_profiles:`, dbError);
+        console.error(`[Auth] ❌ ERROR fetching admin status:`, dbError);
         // role rimane 'standard' in caso di errore (sicurezza)
       }
+      
+      console.log(`[Auth] ===============================================`);
+      console.log(`[Auth] FINAL RESULT: role = '${role}'`);
+      console.log(`[Auth] ===============================================`);
 
       return {
         id: user.id,

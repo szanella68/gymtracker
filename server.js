@@ -8,6 +8,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const trainerRoutes = require('./routes/trainer');
+const adminRoutes = require('./routes/admin');
 const { ensureSupabaseSchema } = require('./config/supabase');
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/gymtracker', express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/trainer', trainerRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

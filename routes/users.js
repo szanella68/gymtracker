@@ -51,15 +51,8 @@ router.get('/me', authenticateToken, async (req, res) => {
         } catch {}
       }
 
-      const adminEmails = (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
-      // Start from auth middleware role, then profile.user_type if set, then env override
+      // Admin check viene già fatto dal middleware auth.js dalla colonna auth.users.admin
       let resolvedUserType = req.user?.user_type || 'standard';
-      if (ensuredProfile?.user_type) {
-        resolvedUserType = ensuredProfile.user_type;
-      }
-      if (adminEmails.includes((req.user.email||'').toLowerCase())) {
-        resolvedUserType = 'admin';
-      }
       res.json({
         id: supabaseId,
         email: req.user.email,
@@ -161,7 +154,7 @@ router.put('/me', authenticateToken, async (req, res) => {
 
       res.json({ message: 'Profile updated successfully', profile: {
         full_name: full_name || req.user.full_name,
-        user_type: up?.user_type || 'standard',
+        user_type: req.user.user_type || 'standard', // Da middleware auth
         phone: up?.phone || null,
         date_of_birth: up?.date_of_birth || null,
         gender: up?.gender || null,

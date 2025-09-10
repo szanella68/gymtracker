@@ -8,396 +8,735 @@
   <link rel="stylesheet" href="shared/css/shared.css">
   <link rel="stylesheet" href="trainer/css/trainer.css">
   <style>
-    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
-    .sidebar { background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
-    .plans { background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
-    .client-item { padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .client-item:hover { background: #f8fafc; }
-    .client-item.active { background: #ecfdf5; border: 1px solid #10b981; }
-    .badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; }
-    .badge.active { background: #ecfdf5; color: #065f46; }
-    .badge.inactive { background: #f1f5f9; color: #334155; }
-    .plan-item { padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px; cursor: pointer; }
-    .plan-item.active { background: #ecfdf5; border-color: #10b981; }
-    .session { border: 1px dashed #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 8px; }
-    .exercise { display:flex; gap: 8px; align-items:center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
-    .exercise:last-child { border-bottom: none; }
-    .plus { cursor:pointer; padding: 4px 8px; border-radius: 4px; border:1px solid #10b981; color:#065f46; background:#ecfdf5; }
+    /* Layout originale mantenuto */
+    .layout { 
+      display: grid; 
+      grid-template-columns: 350px 1fr; 
+      gap: 24px; 
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
 
-    /* Stili migliorati per la sezione clienti */
-    .client-selector-panel {
-      width: 320px;
+    /* SIDEBAR MODERNA */
+    .sidebar { 
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
       border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      border-radius: 20px; 
+      padding: 0;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+      overflow: hidden;
+      height: fit-content;
+    }
+
+    .sidebar-header {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      padding: 24px;
+      position: relative;
+    }
+
+    .sidebar-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #10b981, #34d399, #10b981);
+    }
+
+    .sidebar-content {
+      padding: 20px;
+    }
+
+    .client-item { 
+      padding: 16px;
+      border-radius: 12px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .client-item:hover { 
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      transform: translateX(4px);
+    }
+
+    .client-item.active { 
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border-color: #10b981;
+      transform: translateX(8px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .badge { 
+      font-size: 11px; 
+      padding: 4px 12px; 
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge.active { 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+    }
+
+    .badge.inactive { 
+      background: #f1f5f9; 
+      color: #64748b; 
+    }
+
+    /* SEZIONE SCHEDE MODERNA */
+    .plans { 
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 20px; 
+      padding: 0;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
       overflow: hidden;
     }
 
-    .panel-header {
-      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-      color: #374151;
-      padding: 20px;
+    .plans-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      padding: 24px;
       border-bottom: 3px solid #10b981;
+      position: relative;
     }
 
-    .panel-title {
+    .plans-header::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%);
+    }
+
+    .plans-content {
+      padding: 24px;
+    }
+
+    .plan-item { 
+      padding: 16px; 
+      border-radius: 12px; 
+      border: 2px solid #e2e8f0; 
+      margin-bottom: 12px; 
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .plan-item:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .plan-item.active { 
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+      border-color: #10b981;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    /* BOTTONI MODERNI */
+    .modern-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modern-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .modern-btn:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary-modern {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-primary-modern:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+    }
+
+    .btn-secondary-modern {
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4);
+    }
+
+    .btn-secondary-modern:hover {
+      background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(107, 114, 128, 0.5);
+    }
+
+    .btn-danger-modern {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-danger-modern:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-success-modern {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+    }
+
+    .btn-success-modern:hover {
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.5);
+    }
+
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 12px;
+    }
+
+    /* INTESTAZIONE SCHEDA CON CAMPI AFFIANCATI */
+    .plan-header-section {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .plan-fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .field-row {
       display: flex;
       align-items: center;
       gap: 12px;
+    }
+
+    .field-label {
+      font-weight: 600;
+      color: #374151;
+      min-width: 100px;
+      font-size: 14px;
+    }
+
+    .field-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .field-input:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      background: #fefffe;
+    }
+
+    .field-textarea {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+
+    /* LISTA SESSIONI E ESERCIZI */
+    .session-card {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .session-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .session-header {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      padding: 20px 24px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .session-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 16px;
     }
 
-    .panel-icon {
-      font-size: 1.5rem;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    .session-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
-    .panel-title h3 {
-      margin: 0;
-      font-size: 1.2rem;
-      font-weight: 600;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    .session-content {
+      padding: 24px;
     }
 
-    .modern-select {
-      width: 100%;
-      padding: 10px 14px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      background: white;
-      font-size: 14px;
-      font-weight: 500;
+    .exercise-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .exercise-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       transition: all 0.3s ease;
-      cursor: pointer;
     }
 
-    .modern-select:focus {
+    .exercise-item:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .exercise-info {
+      flex: 1;
+    }
+
+    .exercise-name {
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    .exercise-details {
+      font-size: 13px;
+      color: #64748b;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .exercise-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .no-exercises {
+      text-align: center;
+      padding: 40px 20px;
+      color: #64748b;
+      font-style: italic;
+    }
+
+    /* POPUP MODERNI */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .popup-overlay.active {
+      display: flex;
+    }
+
+    .popup-content {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: hidden;
+      transform: scale(0.8);
+      animation: popupShow 0.3s ease forwards;
+    }
+
+    .popup-header {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      padding: 24px;
+      position: relative;
+    }
+
+    .popup-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #10b981, #34d399, #10b981);
+    }
+
+    .popup-title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .popup-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .popup-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: rotate(90deg);
+    }
+
+    .popup-body {
+      padding: 32px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .popup-form {
+      display: grid;
+      gap: 20px;
+    }
+
+    .popup-form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .popup-form-full {
+      grid-column: 1 / -1;
+    }
+
+    .popup-label {
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .popup-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .popup-input:focus {
       outline: none;
       border-color: #10b981;
       box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
     }
 
-    .modern-select:hover {
-      border-color: #cbd5e1;
-    }
-
-    .client-selection-section {
-      padding: 24px;
-      border-bottom: 1px solid #f1f5f9;
-    }
-
-    .modern-label {
-      display: block;
-    }
-
-    .label-text {
-      display: block;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 8px;
+    .popup-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
       font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+      font-family: inherit;
     }
 
-    .primary-select {
-      border-color: #10b981;
-      background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+    .popup-select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      background: white;
     }
 
-    .primary-select:focus {
-      border-color: #059669;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-    }
-
-    .client-status-section {
+    .popup-footer {
+      background: #f8fafc;
       padding: 24px;
-      border-bottom: 1px solid #f1f5f9;
-      background: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      border-top: 1px solid #e2e8f0;
     }
 
-    .status-control {
+    /* ANIMAZIONI */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes popupShow {
+      from { 
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+      }
+      to { 
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* UTILITY CLASSES */
+    .flex-between {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 16px;
-    }
-
-    .status-info {
-      flex: 1;
-    }
-
-    .status-label {
-      display: block;
-      font-weight: 600;
-      color: #374151;
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    .status-description {
-      display: block;
-      font-size: 12px;
-      color: #6b7280;
-    }
-
-    /* Toggle Switch moderno */
-    .toggle-switch {
-      display: flex;
-      align-items: center;
       gap: 12px;
-      cursor: pointer;
-      user-select: none;
     }
 
-    .toggle-switch input[type="checkbox"] {
-      display: none;
-    }
-
-    .toggle-slider {
-      position: relative;
-      width: 52px;
-      height: 28px;
-      background: #d1d5db;
-      border-radius: 28px;
-      transition: all 0.3s ease;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .toggle-slider::before {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 24px;
-      height: 24px;
-      background: white;
-      border-radius: 50%;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-
-    .toggle-switch input[type="checkbox"]:checked + .toggle-slider {
-      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-    }
-
-    .toggle-switch input[type="checkbox"]:checked + .toggle-slider::before {
-      transform: translateX(24px);
-    }
-
-    .toggle-switch:hover .toggle-slider {
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15), 0 0 0 4px rgba(16, 185, 129, 0.1);
-    }
-
-    .toggle-label {
-      font-weight: 600;
-      color: #374151;
-      font-size: 14px;
-    }
-
-    .panel-actions {
-      padding: 24px;
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    }
-
-    .create-plan-btn {
-      width: 100%;
-      padding: 14px 20px;
-      font-size: 15px;
-      font-weight: 600;
-      border-radius: 10px;
+    .flex {
       display: flex;
+      gap: 12px;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
-      transition: all 0.3s ease;
     }
 
-    .create-plan-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
-    }
-
-    .btn-icon {
-      font-size: 1.1rem;
-    }
-
-    /* Sezione schede migliorata */
-    .plans-section {
-      flex: 1;
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      overflow: hidden;
-    }
-
-    .section-header {
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      padding: 16px 20px;
-      border-bottom: 2px solid #e2e8f0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .section-icon {
-      font-size: 1.3rem;
-    }
-
-    .section-header h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #374151;
-    }
-
-    .plans-list {
-      padding: 16px;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    /* Miglioramento degli elementi scheda */
-    .plan-item {
-      padding: 16px;
-      border-radius: 10px;
-      border: 2px solid #e2e8f0;
-      margin-bottom: 12px;
-      cursor: pointer;
-      background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%);
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .plan-item:hover {
-      border-color: #cbd5e1;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-
-    .plan-item.active {
-      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
-      border-color: #10b981;
-      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
-      transform: translateY(-2px);
-    }
-
-    .plan-item.active::before {
-      content: '✓';
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: #10b981;
-      color: white;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    /* Miglioramento responsiveness */
-    @media (max-width: 768px) {
-      .client-selector-panel {
-        width: 100%;
-        margin-bottom: 16px;
-      }
-      
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
       .layout {
         grid-template-columns: 1fr;
         gap: 16px;
       }
+    }
+
+    @media (max-width: 768px) {
+      .plan-fields-grid {
+        grid-template-columns: 1fr;
+      }
       
-      .flex {
+      .field-row {
         flex-direction: column;
-        gap: 16px !important;
+        align-items: stretch;
+      }
+      
+      .field-label {
+        min-width: auto;
+      }
+
+      .popup-content {
+        width: 95%;
+        margin: 20px;
+      }
+
+      .popup-form-row {
+        grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
   <div data-include="shared/partials/header.html"></div>
-  <main class="trainer-dashboard">
-    <div class="dashboard-header">
-      <h1>📋 Gestione Schede</h1>
-      <div class="trainer-actions">
+  
+  <main class="layout">
+    <!-- SIDEBAR CLIENTI -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2 style="margin: 0; font-size: 1.2rem;">
+          👥 Clienti
+        </h2>
+      </div>
+      <div class="sidebar-content">
+        <div id="clientsList">
+          <div style="color: #64748b; text-align: center; padding: 20px;">
+            Caricamento clienti...
+          </div>
+        </div>
       </div>
     </div>
-    <div class="layout" style="grid-template-columns: 1fr;">
-      <section class="plans" style="grid-column: 1 / -1;">
-        <!-- Riga superiore: a sinistra combo clienti (con filtro), a destra elenco schede -->
-        <div class="flex" style="gap:16px; align-items:flex-start;">
-          <div class="client-selector-panel">
-            <!-- Header della sezione clienti -->
-            <div class="panel-header">
-              <div class="panel-title">
-                <span class="panel-icon">👥</span>
-                <h3>Gestione Clienti</h3>
-              </div>
-              <select id="filterActive" class="modern-select" onchange="loadClients()">
-                <option value="all">Tutti i clienti</option>
-                <option value="true" selected>Solo attivi</option>
-                <option value="false">Solo disattivati</option>
-              </select>
-            </div>
 
-            <!-- Selezione cliente -->
-            <div class="client-selection-section">
-              <label class="modern-label">
-                <span class="label-text">Cliente selezionato</span>
-                <select id="clientSelect" class="modern-select primary-select" onchange="onClientChange()">
-                  <option value="">-- Seleziona un cliente --</option>
-                </select>
-              </label>
-            </div>
-
-            <!-- Controllo stato cliente -->
-            <div class="client-status-section">
-              <div class="status-control">
-                <div class="status-info">
-                  <span class="status-label">Stato account cliente</span>
-                  <span class="status-description">Attiva/disattiva l'accesso del cliente</span>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="clientActiveToggle" onchange="onClientActiveToggleChange(this.checked)" />
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Attivo</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Azioni -->
-            <div class="panel-actions">
-              <button class="btn btn-primary create-plan-btn" onclick="createPlan()">
-                <span class="btn-icon">📋</span>
-                Nuova Scheda Allenamento
-              </button>
-            </div>
-          </div>
-          <div class="plans-section">
-            <div class="section-header">
-              <span class="section-icon">📊</span>
-              <h3>Schede Allenamento</h3>
-            </div>
-            <div id="plansList" class="plans-list"></div>
-          </div>
-        </div>
-
-        <!-- Riga inferiore: dettaglio scheda a tutta larghezza -->
-        <div class="mt-2" style="margin-top:16px;">
-          <div id="planDetail"></div>
-        </div>
-      </section>
+    <!-- AREA PRINCIPALE SCHEDE -->
+    <div class="plans">
+      <div class="plans-header">
+        <h1 style="margin: 0; font-size: 1.4rem; color: #374151;">
+          📋 Gestione Schede Allenamento
+        </h1>
+      </div>
+      
+      <div class="plans-content">
+        <div id="plansList" style="margin-bottom: 20px;"></div>
+        <div id="planDetail"></div>
+      </div>
     </div>
   </main>
 
+  <!-- POPUP NUOVA/MODIFICA SESSIONE -->
+  <div class="popup-overlay" id="sessionPopup">
+    <div class="popup-content">
+      <div class="popup-header">
+        <h3 class="popup-title" id="sessionPopupTitle">Nuova Sessione</h3>
+        <button class="popup-close" onclick="closePopup('sessionPopup')">&times;</button>
+      </div>
+      <div class="popup-body">
+        <form class="popup-form" id="sessionForm">
+          <div class="popup-form-full">
+            <label class="popup-label">Nome Sessione</label>
+            <input type="text" class="popup-input" id="sessionName" placeholder="es. Push Day, Gambe, Full Body..." required>
+          </div>
+          <div class="popup-form-full">
+            <label class="popup-label">Descrizione (facoltativa)</label>
+            <textarea class="popup-textarea" id="sessionDescription" placeholder="Descrizione della sessione..."></textarea>
+          </div>
+          <div class="popup-form-row">
+            <div>
+              <label class="popup-label">Giorno Settimana</label>
+              <select class="popup-select" id="sessionDay">
+                <option value="">Non specificato</option>
+                <option value="1">Lunedì</option>
+                <option value="2">Martedì</option>
+                <option value="3">Mercoledì</option>
+                <option value="4">Giovedì</option>
+                <option value="5">Venerdì</option>
+                <option value="6">Sabato</option>
+                <option value="0">Domenica</option>
+              </select>
+            </div>
+            <div>
+              <label class="popup-label">Durata Stimata (min)</label>
+              <input type="number" class="popup-input" id="sessionDuration" min="15" max="300" placeholder="60">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="popup-footer">
+        <button class="modern-btn btn-secondary-modern" onclick="closePopup('sessionPopup')">Annulla</button>
+        <button class="modern-btn btn-success-modern" onclick="saveSessionFromPopup()">💾 Salva Sessione</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP NUOVO/MODIFICA ESERCIZIO -->
+  <div class="popup-overlay" id="exercisePopup">
+    <div class="popup-content">
+      <div class="popup-header">
+        <h3 class="popup-title" id="exercisePopupTitle">Nuovo Esercizio</h3>
+        <button class="popup-close" onclick="closePopup('exercisePopup')">&times;</button>
+      </div>
+      <div class="popup-body">
+        <form class="popup-form" id="exerciseForm">
+          <div class="popup-form-full">
+            <label class="popup-label">Nome Esercizio</label>
+            <input type="text" class="popup-input" id="exerciseName" placeholder="es. Panca piana, Squat, Trazioni..." required>
+          </div>
+          <div class="popup-form-row">
+            <div>
+              <label class="popup-label">Serie</label>
+              <input type="number" class="popup-input" id="exerciseSets" min="1" max="20" value="3">
+            </div>
+            <div>
+              <label class="popup-label">Ripetizioni Min</label>
+              <input type="number" class="popup-input" id="exerciseRepsMin" min="1" max="100" value="8">
+            </div>
+          </div>
+          <div class="popup-form-row">
+            <div>
+              <label class="popup-label">Ripetizioni Max</label>
+              <input type="number" class="popup-input" id="exerciseRepsMax" min="1" max="100" value="12">
+            </div>
+            <div>
+              <label class="popup-label">Peso Suggerito (kg)</label>
+              <input type="number" class="popup-input" id="exerciseWeight" min="0" step="0.5" value="0">
+            </div>
+          </div>
+          <div class="popup-form-row">
+            <div>
+              <label class="popup-label">Riposo (secondi)</label>
+              <input type="number" class="popup-input" id="exerciseRest" min="10" max="600" value="90">
+            </div>
+            <div>
+              <label class="popup-label">Intensità (0-10)</label>
+              <input type="number" class="popup-input" id="exerciseIntensity" min="0" max="10" value="0">
+            </div>
+          </div>
+          <div class="popup-form-full">
+            <label class="popup-label">Link Video/Tutorial (facoltativo)</label>
+            <input type="url" class="popup-input" id="exerciseUrl" placeholder="https://www.youtube.com/watch?v=...">
+          </div>
+          <div class="popup-form-full">
+            <label class="popup-label">Note Trainer (facoltative)</label>
+            <textarea class="popup-textarea" id="exerciseNotes" placeholder="Note aggiuntive per l'esercizio..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="popup-footer">
+        <button class="modern-btn btn-secondary-modern" onclick="closePopup('exercisePopup')">Annulla</button>
+        <button class="modern-btn btn-success-modern" onclick="saveExerciseFromPopup()">💾 Salva Esercizio</button>
+      </div>
+    </div>
+  </div>
+
+  <div data-include="shared/partials/footer.html"></div>
   <script src="shared/js/core/api.js"></script>
   <script src="shared/js/include.js"></script>
+  <script src="shared/js/core/utils.js"></script>
   <script>
+    // Auth check
     if (!GymAPI.isAuthenticated()) {
       window.location.href = '/gymtracker/utente/';
     }
@@ -406,154 +745,464 @@
     let currentPlans = [];
     let currentPlan = null;
     let clientsData = [];
+    let editingSession = null;  
+    let editingExercise = null; 
 
-    async function loadClients() {
-      const active = document.getElementById('filterActive').value;
-      const t = GymAPI.getToken();
-      const r = await fetch(`${GymAPI.baseURL}/trainer/clients?active=${active}`, { headers: { Authorization: 'Bearer ' + t }});
-      const { clients } = await r.json();
-      clientsData = clients || [];
-      const sel = document.getElementById('clientSelect');
-      const prev = sel.value;
-      sel.innerHTML = '<option value="">-- Seleziona --</option>';
-      clientsData.forEach(c => {
-        const label = c.full_name ? `${c.full_name} (${c.email})` : (c.email || 'Senza nome');
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = label;
-        sel.appendChild(opt);
-      });
-      // Pre-selezione da query ?user_id=..., poi mantieni selezione precedente, poi primo
-      const q = new URLSearchParams(window.location.search);
-      const qUser = q.get('user_id');
-      if (qUser && clientsData.some(c => c.id === qUser)) {
-        sel.value = qUser;
-      } else if (prev && clientsData.some(c => c.id === prev)) {
-        sel.value = prev;
-      } else if (clientsData.length) {
-        sel.value = clientsData[0].id;
-      }
-      onClientChange();
+    // POPUP MANAGEMENT
+    function openPopup(popupId) {
+      document.getElementById(popupId).classList.add('active');
+      document.body.style.overflow = 'hidden';
     }
 
-    function onClientChange() {
-      const sel = document.getElementById('clientSelect');
-      const id = sel.value;
-      currentClient = clientsData.find(c => c.id === id) || null;
-      // Aggiorna toggle stato cliente
-      const toggle = document.getElementById('clientActiveToggle');
-      if (currentClient) {
-        toggle.disabled = false;
-        toggle.checked = !!currentClient.utente_attivo;
-      } else {
-        toggle.checked = false;
-        toggle.disabled = true;
+    function closePopup(popupId) {
+      document.getElementById(popupId).classList.remove('active');
+      document.body.style.overflow = '';
+      const form = document.querySelector(`#${popupId} form`);
+      if (form) form.reset();
+      editingSession = null;
+      editingExercise = null;
+    }
+
+    // GESTIONE CLIENTI
+    async function loadClients() {
+      try {
+        const active = 'all';
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/clients?active=${active}`, { 
+          headers: { Authorization: 'Bearer ' + t }
+        });
+        const data = await r.json();
+        clientsData = data.clients || [];
+        
+        let html = '';
+        if (!clientsData.length) {
+          html = '<div style="color: #64748b; text-align: center; padding: 20px;">Nessun cliente trovato</div>';
+        } else {
+          clientsData.forEach(c => {
+            html += `
+              <div class="client-item" onclick="selectClient('${c.id}', '${(c.full_name || c.email || 'Cliente').replace(/'/g, '\\\'')}')" id="client_${c.id}">
+                <div>
+                  <strong>${c.full_name || c.email || 'Cliente'}</strong>
+                  ${c.email ? `<div style="color: #64748b; font-size: 12px;">${c.email}</div>` : ''}
+                </div>
+                <span class="badge ${c.utente_attivo !== false ? 'active' : 'inactive'}">
+                  ${c.utente_attivo !== false ? 'Attivo' : 'Inattivo'}
+                </span>
+              </div>`;
+          });
+        }
+        
+        document.getElementById('clientsList').innerHTML = html;
+      } catch (error) {
+        console.error('Errore caricamento clienti:', error);
       }
+    }
+
+    function selectClient(id, name) {
+      document.querySelectorAll('.client-item').forEach(el => el.classList.remove('active'));
+      const clientEl = document.getElementById(`client_${id}`);
+      if (clientEl) clientEl.classList.add('active');
+      
+      currentClient = { id, name };
+      currentPlan = null;
       loadPlans();
     }
 
-    async function onClientActiveToggleChange(checked) {
-      if (!currentClient) return;
-      const id = currentClient.id;
-      const t = GymAPI.getToken();
-      const sel = document.getElementById('clientSelect');
-      try {
-        const r = await fetch(`${GymAPI.baseURL}/trainer/clients/${encodeURIComponent(id)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type':'application/json', Authorization:'Bearer '+t },
-          body: JSON.stringify({ utente_attivo: !!checked })
-        });
-        if (!r.ok) throw new Error('update failed');
-        // ricarica elenco clienti preservando selezione (potrebbe sparire se filtrato)
-        const keepId = id;
-        await loadClients();
-        // se il client non è più nel filtro, la select cadrà su altro ID
-        const after = document.getElementById('clientSelect').value;
-        if (after !== keepId) {
-          // Se è sparito per via del filtro, azzera piani e dettagli
-          currentPlan = null;
-          currentPlans = [];
-          document.getElementById('plansList').innerHTML = '';
-          document.getElementById('planDetail').innerHTML = '';
-        }
-      } catch (e) {
-        alert('Aggiornamento stato cliente fallito');
-        // ripristina toggle
-        document.getElementById('clientActiveToggle').checked = !!(currentClient && currentClient.utente_attivo);
-      }
-    }
-
+    // GESTIONE SCHEDE
     async function loadPlans() {
       if (!currentClient) return;
-      const t = GymAPI.getToken();
-      const r = await fetch(`${GymAPI.baseURL}/trainer/plans?user_id=${encodeURIComponent(currentClient.id)}`, { headers: { Authorization: 'Bearer ' + t }});
-      const { plans } = await r.json();
-      currentPlans = plans || [];
-      const box = document.getElementById('plansList');
-      box.innerHTML = '';
-      currentPlans.forEach(p => {
-        const d = document.createElement('div');
-        d.className = 'plan-item' + (currentPlan && currentPlan.id === p.id ? ' active' : '');
-        d.innerHTML = `<span>${p.titolo || '(Senza titolo)'}</span>
-          <span style=\"float:right\"> <label style=\"font-size:12px; color:#64748b; margin-right:6px;\">attiva</label>
-            <input type=\"checkbox\" ${p.attiva!==false?'checked':''}
-              onclick=\"event.stopPropagation(); togglePlanActive('${p.id}', this.checked, this)\"/>
-          </span>`;
-        d.onclick = () => openPlan(p, d);
-        box.appendChild(d);
-      });
-      document.getElementById('planDetail').innerHTML = '';
+      
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/plans?user_id=${encodeURIComponent(currentClient.id)}`, { 
+          headers: { Authorization: 'Bearer ' + t }
+        });
+        const data = await r.json();
+        currentPlans = data.plans || [];
+        
+        const box = document.getElementById('plansList');
+        box.innerHTML = '';
+        
+        if (!currentPlans.length) {
+          box.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #64748b;">
+              <p>Nessuna scheda trovata per <strong>${currentClient.name}</strong></p>
+              <button class="modern-btn btn-primary-modern" onclick="createPlan()">
+                ➕ Crea Prima Scheda
+              </button>
+            </div>`;
+          document.getElementById('planDetail').innerHTML = '';
+          return;
+        }
+
+        box.innerHTML = `
+          <div class="flex-between" style="margin-bottom: 16px;">
+            <h3 style="margin: 0; color: #374151;">Schede di <strong>${currentClient.name}</strong></h3>
+            <button class="modern-btn btn-primary-modern" onclick="createPlan()">
+              ➕ Nuova Scheda
+            </button>
+          </div>`;
+
+        currentPlans.forEach(p => {
+          const d = document.createElement('div');
+          d.className = 'plan-item' + (currentPlan && currentPlan.id === p.id ? ' active' : '');
+          d.innerHTML = `
+            <div class="flex-between">
+              <span><strong>${p.titolo || '(Senza titolo)'}</strong></span>
+              <div class="flex">
+                <span class="badge ${p.attiva !== false ? 'active' : 'inactive'}">
+                  ${p.attiva !== false ? 'Attiva' : 'Inattiva'}
+                </span>
+                <label style="font-size: 12px; color: #64748b; margin-right: 6px; cursor: pointer;">
+                  <input type="checkbox" ${p.attiva !== false ? 'checked' : ''} 
+                         onclick="event.stopPropagation(); togglePlanActive('${p.id}', this.checked, this)" style="margin-right: 4px;"/> 
+                  attiva
+                </label>
+              </div>
+            </div>`;
+          d.onclick = () => openPlan(p, d);
+          box.appendChild(d);
+        });
+        
+        document.getElementById('planDetail').innerHTML = '';
+      } catch (error) {
+        console.error('Errore caricamento schede:', error);
+      }
     }
 
     async function openPlan(p, el) {
       currentPlan = p;
-      // evidenzia scheda selezionata
       document.querySelectorAll('#plansList .plan-item').forEach(i => i.classList.remove('active'));
       if (el) el.classList.add('active');
-      const t = GymAPI.getToken();
-      const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(p.id)}`, { headers: { Authorization: 'Bearer ' + t }});
-      const { plan, sessions, exercises } = await r.json();
-      const box = document.getElementById('planDetail');
-      let html = '';
-      html += `<div class="card"><div class="card-header"><h3>Dettagli scheda</h3></div>`;
-      html += `<div class="form-group"><label>Titolo</label><input id="planTitle" type="text" value="${plan.titolo || ''}"></div>`;
-      html += `<div class="form-group"><label>Descrizione</label><textarea id="planDesc">${plan.descrizione || ''}</textarea></div>`;
-      html += `<div class="flex" style="gap:12px;">
-                 <div class="form-group" style="flex:1"><label>Autore</label><input id="planAuthor" type="text" value="${plan.autore || ''}"></div>
-                 <div class="form-group" style="width:180px"><label>Durata (settimane)</label><input id="planWeeks" type="number" min="1" max="52" value="${plan.durata_settimane || ''}"></div>
-                 <div class="form-group" style="width:220px"><label>Sessioni/settimana</label><input id="planSpw" type="number" min="1" max="14" value="${plan.sessioni_settimana || ''}"></div>
-               </div>`;
-      html += `<button class="btn-primary" onclick="savePlan('${plan.id}')">Salva scheda</button>`;
-      html += `<div class="flex-between" style="margin:10px 0;"><strong>SESSIONI</strong><button class="plus" onclick="createSession()">+ Aggiungi sessione</button></div>`;
-      sessions.forEach(s => {
-        html += `<div class="session">`;
-        html += `<div class="form-group"><label>Nome sessione</label><input type="text" id="sess_${s.id}_name" value="${s.nome}"/></div>`;
-        html += `<div class="flex-between">`;
-        html += `<div><button class="btn btn-sm" onclick="saveSession('${s.id}')">Salva sessione</button> <button class="plus" onclick="createExercise('${s.id}')">+ Esercizio</button></div>`;
-        html += `<button class="btn btn-sm" onclick="deleteSession('${s.id}')">Elimina sessione</button>`;
-        html += `</div>`;
-        const list = exercises.filter(e => e.sessione_id === s.id);
-        if (!list.length) html += `<div style="color:#64748b;">Nessun esercizio</div>`;
-        list.forEach(e => {
-          html += `<div class="exercise">`;
-          html += `<input style="width:28%" id="ex_${e.id}_name" value="${e.name}"/>`;
-          html += ` S:<input style="width:50px" id="ex_${e.id}_sets" type="number" value="${e.sets_count||3}"/>`;
-          html += ` Rip:<input style="width:50px" id="ex_${e.id}_rmin" type="number" value="${e.reps_min||8}"/>-<input style="width:50px" id="ex_${e.id}_rmax" type="number" value="${e.reps_max||12}"/>`;
-          html += ` Kg:<input style="width:70px" id="ex_${e.id}_kg" type="number" step="0.1" value="${e.weight_suggested||0}"/>`;
-          html += ` Rest:<input style="width:60px" id="ex_${e.id}_rest" type="number" value="${e.rest_seconds||90}"/>`;
-          html += ` Int:<select id="ex_${e.id}_int" style="width:70px">${Array.from({length:11},(_,i)=>`<option value="${i}" ${e.intensity==i?'selected':''}>${i}</option>`).join('')}</select>`;
-          html += ` URL:<input style="width:18%" id="ex_${e.id}_url" type="url" placeholder="https://..." value="${e.external_url||''}"/>`;
-          html += ` <button class="btn btn-sm" onclick="saveExercise('${e.id}')">Salva</button>`;
-          html += ` <button class="btn btn-sm" onclick="deleteExercise('${e.id}')">🗑</button>`;
-          html += `</div>`;
+      
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(p.id)}`, { 
+          headers: { Authorization: 'Bearer ' + t }
         });
-        html += `</div>`;
-      });
-      html += `<div class="mt-2"><button class="btn btn-sm btn-logout" onclick="deletePlan()">Elimina scheda</button></div>`;
-      html += `</div>`;
+        const data = await r.json();
+        const { plan, sessions, exercises } = data;
+        
+        renderPlanDetail(plan, sessions || [], exercises || []);
+      } catch (error) {
+        console.error('Errore caricamento dettagli scheda:', error);
+      }
+    }
+
+    function renderPlanDetail(plan, sessions, exercises) {
+      const box = document.getElementById('planDetail');
+      
+      let html = `
+        <div style="margin-bottom: 20px;">
+          <button class="modern-btn btn-secondary-modern" onclick="loadPlans()">
+            ← Torna alle schede
+          </button>
+          <button class="modern-btn btn-danger-modern" onclick="deletePlan()" style="float: right;">
+            🗑 Elimina scheda
+          </button>
+        </div>`;
+
+      // INTESTAZIONE SCHEDA
+      html += `
+        <div class="plan-header-section">
+          <h3 style="margin: 0 0 20px 0; color: #374151;">📋 Configurazione Scheda</h3>
+          
+          <div class="plan-fields-grid">
+            <div class="field-row">
+              <label class="field-label">Titolo:</label>
+              <input class="field-input" id="planTitle" type="text" value="${plan.titolo || ''}" placeholder="Nome della scheda">
+            </div>
+            
+            <div class="field-row">
+              <label class="field-label">Autore:</label>
+              <input class="field-input" id="planAuthor" type="text" value="${plan.autore || ''}" placeholder="Trainer responsabile">
+            </div>
+            
+            <div class="field-row">
+              <label class="field-label">Durata (sett.):</label>
+              <input class="field-input" id="planWeeks" type="number" min="1" max="52" value="${plan.durata_settimane || ''}" placeholder="es. 12">
+            </div>
+            
+            <div class="field-row">
+              <label class="field-label">Sessioni/sett.:</label>
+              <input class="field-input" id="planSpw" type="number" min="1" max="14" value="${plan.sessioni_settimana || ''}" placeholder="es. 3">
+            </div>
+          </div>
+          
+          <div class="field-row">
+            <label class="field-label">Descrizione:</label>
+            <textarea class="field-textarea" id="planDesc" placeholder="Descrizione della scheda...">${plan.descrizione || ''}</textarea>
+          </div>
+          
+          <div style="margin-top: 20px;">
+            <button class="modern-btn btn-success-modern" onclick="savePlan('${plan.id}')">
+              💾 Salva Configurazione
+            </button>
+          </div>
+        </div>`;
+
+      // SEZIONI SESSIONI
+      html += `
+        <div class="flex-between" style="margin-bottom: 20px;">
+          <h3 style="margin: 0; color: #374151;">🏋️ Sessioni Allenamento</h3>
+          <button class="modern-btn btn-primary-modern" onclick="openNewSessionPopup()">
+            ➕ Nuova Sessione
+          </button>
+        </div>`;
+
+      if (!sessions.length) {
+        html += `
+          <div class="no-exercises">
+            <span style="font-size: 48px; opacity: 0.3;">🏋️</span>
+            <div>Nessuna sessione creata</div>
+            <div style="color: #64748b;">Aggiungi la prima sessione per iniziare</div>
+          </div>`;
+      } else {
+        sessions.forEach(s => {
+          const sessionExercises = exercises.filter(e => e.sessione_id === s.id);
+          
+          html += `
+            <div class="session-card">
+              <div class="session-header">
+                <div class="session-title-row">
+                  <div>
+                    <h4 style="margin: 0; color: #374151;">${s.nome || 'Sessione senza nome'}</h4>
+                    ${s.descrizione ? `<p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">${s.descrizione}</p>` : ''}
+                  </div>
+                  <div class="session-actions">
+                    <button class="modern-btn btn-secondary-modern btn-small" onclick="openEditSessionPopup('${s.id}', '${(s.nome || '').replace(/'/g, '\\\'')}'${s.descrizione ? `, '${s.descrizione.replace(/'/g, '\\\'')}''` : ', null'}${s.giorno_settimana ? `, ${s.giorno_settimana}` : ', null'}${s.durata_stimata_minuti ? `, ${s.durata_stimata_minuti}` : ', null'})">
+                      ✏️ Modifica
+                    </button>
+                    <button class="modern-btn btn-primary-modern btn-small" onclick="openNewExercisePopup('${s.id}')">
+                      ➕ Esercizio
+                    </button>
+                    <button class="modern-btn btn-danger-modern btn-small" onclick="deleteSession('${s.id}')">
+                      🗑 Elimina
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="session-content">`;
+
+          if (!sessionExercises.length) {
+            html += `
+              <div class="no-exercises">
+                <span style="font-size: 32px; opacity: 0.3;">💪</span>
+                <div>Nessun esercizio in questa sessione</div>
+              </div>`;
+          } else {
+            html += `<div class="exercise-list">`;
+            sessionExercises.forEach(ex => {
+              html += `
+                <div class="exercise-item">
+                  <div class="exercise-info">
+                    <div class="exercise-name">${ex.name || 'Esercizio senza nome'}</div>
+                    <div class="exercise-details">
+                      <span>Serie: ${ex.sets_count || 3}</span>
+                      <span>Rip: ${ex.reps_min || 8}-${ex.reps_max || 12}</span>
+                      <span>Peso: ${ex.weight_suggested || 0}kg</span>
+                      <span>Riposo: ${ex.rest_seconds || 90}s</span>
+                      <span>Intensità: ${ex.intensity || 0}/10</span>
+                      ${ex.external_url ? '<span>🔗 Video</span>' : ''}
+                    </div>
+                  </div>
+                  <div class="exercise-actions">
+                    <button class="modern-btn btn-secondary-modern btn-small" onclick="openEditExercisePopup('${ex.id}')">
+                      ✏️ Modifica
+                    </button>
+                    <button class="modern-btn btn-danger-modern btn-small" onclick="deleteExercise('${ex.id}')">
+                      🗑
+                    </button>
+                  </div>
+                </div>`;
+            });
+            html += `</div>`;
+          }
+
+          html += `</div></div>`;
+        });
+      }
+
       box.innerHTML = html;
     }
 
+    // POPUP SESSIONI
+    function openNewSessionPopup() {
+      editingSession = null;
+      document.getElementById('sessionPopupTitle').textContent = 'Nuova Sessione';
+      document.getElementById('sessionForm').reset();
+      openPopup('sessionPopup');
+    }
+
+    function openEditSessionPopup(sessionId, name, description, day, duration) {
+      editingSession = sessionId;
+      document.getElementById('sessionPopupTitle').textContent = 'Modifica Sessione';
+      document.getElementById('sessionName').value = name || '';
+      document.getElementById('sessionDescription').value = description || '';
+      document.getElementById('sessionDay').value = day || '';
+      document.getElementById('sessionDuration').value = duration || '';
+      openPopup('sessionPopup');
+    }
+
+    async function saveSessionFromPopup() {
+      const name = document.getElementById('sessionName').value.trim();
+      if (!name) {
+        alert('Il nome della sessione è obbligatorio');
+        return;
+      }
+
+      const payload = {
+        nome: name,
+        descrizione: document.getElementById('sessionDescription').value.trim() || null,
+        giorno_settimana: document.getElementById('sessionDay').value || null,
+        durata_stimata_minuti: document.getElementById('sessionDuration').value ? parseInt(document.getElementById('sessionDuration').value) : null
+      };
+
+      try {
+        const t = GymAPI.getToken();
+        let r;
+        
+        if (editingSession) {
+          r = await fetch(`${GymAPI.baseURL}/trainer/sessions/${encodeURIComponent(editingSession)}`, { 
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, 
+            body: JSON.stringify(payload) 
+          });
+        } else {
+          payload.scheda_id = currentPlan.id;
+          r = await fetch(`${GymAPI.baseURL}/trainer/sessions`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, 
+            body: JSON.stringify(payload) 
+          });
+        }
+
+        if (!r.ok) throw new Error('Salvataggio fallito');
+        
+        closePopup('sessionPopup');
+        openPlan(currentPlan);
+        
+      } catch (error) {
+        console.error('Errore salvataggio sessione:', error);
+        alert('Errore nel salvataggio della sessione');
+      }
+    }
+
+    // POPUP ESERCIZI
+    function openNewExercisePopup(sessionId) {
+      editingExercise = { sessionId, isNew: true };
+      document.getElementById('exercisePopupTitle').textContent = 'Nuovo Esercizio';
+      
+      document.getElementById('exerciseForm').reset();
+      document.getElementById('exerciseSets').value = '3';
+      document.getElementById('exerciseRepsMin').value = '8';
+      document.getElementById('exerciseRepsMax').value = '12';
+      document.getElementById('exerciseWeight').value = '0';
+      document.getElementById('exerciseRest').value = '90';
+      document.getElementById('exerciseIntensity').value = '0';
+      
+      openPopup('exercisePopup');
+    }
+
+    async function openEditExercisePopup(exerciseId) {
+      try {
+        const t = GymAPI.getToken();
+        const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(currentPlan.id)}`, { 
+          headers: { Authorization: 'Bearer ' + t }
+        });
+        const data = await r.json();
+        const exercise = data.exercises.find(e => e.id === exerciseId);
+        
+        if (!exercise) {
+          alert('Esercizio non trovato');
+          return;
+        }
+
+        editingExercise = { exerciseId, isNew: false };
+        document.getElementById('exercisePopupTitle').textContent = 'Modifica Esercizio';
+        
+        document.getElementById('exerciseName').value = exercise.name || '';
+        document.getElementById('exerciseSets').value = exercise.sets_count || 3;
+        document.getElementById('exerciseRepsMin').value = exercise.reps_min || 8;
+        document.getElementById('exerciseRepsMax').value = exercise.reps_max || 12;
+        document.getElementById('exerciseWeight').value = exercise.weight_suggested || 0;
+        document.getElementById('exerciseRest').value = exercise.rest_seconds || 90;
+        document.getElementById('exerciseIntensity').value = exercise.intensity || 0;
+        document.getElementById('exerciseUrl').value = exercise.external_url || '';
+        document.getElementById('exerciseNotes').value = exercise.trainer_notes || '';
+        
+        openPopup('exercisePopup');
+      } catch (error) {
+        console.error('Errore caricamento esercizio:', error);
+        alert('Errore nel caricamento dell\'esercizio');
+      }
+    }
+
+    async function saveExerciseFromPopup() {
+      const name = document.getElementById('exerciseName').value.trim();
+      if (!name) {
+        alert('Il nome dell\'esercizio è obbligatorio');
+        return;
+      }
+
+      const payload = {
+        name,
+        sets_count: parseInt(document.getElementById('exerciseSets').value || '3'),
+        reps_min: parseInt(document.getElementById('exerciseRepsMin').value || '8'),
+        reps_max: parseInt(document.getElementById('exerciseRepsMax').value || '12'),
+        weight_suggested: parseFloat(document.getElementById('exerciseWeight').value || '0'),
+        rest_seconds: parseInt(document.getElementById('exerciseRest').value || '90'),
+        intensity: parseInt(document.getElementById('exerciseIntensity').value || '0'),
+        trainer_notes: document.getElementById('exerciseNotes').value.trim() || null
+      };
+
+      const url = document.getElementById('exerciseUrl').value.trim();
+      if (url) {
+        payload.external_url = url;
+      }
+
+      console.log('Payload inviato:', payload);
+
+      try {
+        const t = GymAPI.getToken();
+        let r;
+        
+        if (editingExercise.isNew) {
+          const createPayload = {
+            sessione_id: editingExercise.sessionId,
+            ...payload
+          };
+          
+          r = await fetch(`${GymAPI.baseURL}/trainer/exercises`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, 
+            body: JSON.stringify(createPayload) 
+          });
+        } else {
+          r = await fetch(`${GymAPI.baseURL}/trainer/exercises/${encodeURIComponent(editingExercise.exerciseId)}`, { 
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, 
+            body: JSON.stringify(payload) 
+          });
+        }
+
+        if (!r.ok) {
+          const errorData = await r.json().catch(() => ({}));
+          console.error('Errore server:', r.status, errorData);
+          throw new Error('Salvataggio fallito: ' + r.status);
+        }
+        
+        closePopup('exercisePopup');
+        openPlan(currentPlan);
+        
+      } catch (error) {
+        console.error('Errore salvataggio esercizio:', error);
+        alert('Errore nel salvataggio dell\'esercizio: ' + error.message);
+      }
+    }
+
+    // FUNZIONI CRUD ORIGINALI
     async function savePlan(id) {
       const payload = {
         titolo: document.getElementById('planTitle').value,
@@ -566,26 +1215,20 @@
       const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });
       if (!r.ok) return alert('Salvataggio scheda fallito');
       await loadPlans();
-      // riapri e mantieni evidenza
-      const el = Array.from(document.querySelectorAll('#plansList .plan-item'))
-        .find(node => (node.textContent || '') === (currentPlan.titolo || '(Senza titolo)')) || null;
-      openPlan(currentPlan, el);
+      const plan = currentPlans.find(p => p.id === id);
+      if (plan) openPlan(plan);
     }
-
-    // toggleClientActive non più usato: gestione client solo via combo e filtro
 
     async function togglePlanActive(id, checked, el) {
       try {
         const t = GymAPI.getToken();
         if (checked) {
-          // Consenti selezione solo se non esistono altre schede attive
           const otherActive = (currentPlans || []).some(p => p.id !== id && p.attiva !== false);
           if (otherActive) {
             alert("Disattiva le altre schede prima di selezionarne un'altra.");
-            if (el) el.checked = false; // non lasciare spuntare una nuova scheda
+            if (el) el.checked = false;
             return;
           }
-          // Attiva solo questa scheda senza auto-disattivare le altre lato client
           const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(id)}`, {
             method: 'PUT', headers: { 'Content-Type':'application/json', Authorization:'Bearer '+t },
             body: JSON.stringify({ attiva: true })
@@ -593,7 +1236,6 @@
           if (!r.ok) throw new Error('Activate failed');
           await loadPlans();
         } else {
-          // Consenti disattivazione esplicita
           const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(id)}`, {
             method: 'PUT', headers: { 'Content-Type':'application/json', Authorization:'Bearer '+t },
             body: JSON.stringify({ attiva: false })
@@ -603,36 +1245,8 @@
         }
       } catch (e) {
         alert('Aggiornamento stato scheda fallito');
-        // Ripristina stato precedente in caso di errore
         if (el) el.checked = !checked;
       }
-    }
-
-    async function saveSession(id) {
-      const payload = {
-        nome: document.getElementById(`sess_${id}_name`).value
-      };
-      const t = GymAPI.getToken();
-      const r = await fetch(`${GymAPI.baseURL}/trainer/sessions/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });
-      if (!r.ok) return alert('Salvataggio sessione fallito');
-      openPlan(currentPlan);
-    }
-
-    async function saveExercise(id) {
-      const payload = {
-        name: document.getElementById(`ex_${id}_name`).value,
-        sets_count: parseInt(document.getElementById(`ex_${id}_sets`).value||'3',10),
-        reps_min: parseInt(document.getElementById(`ex_${id}_rmin`).value||'8',10),
-        reps_max: parseInt(document.getElementById(`ex_${e.id}_rmax`).value||'12',10),
-        weight_suggested: parseFloat(document.getElementById(`ex_${e.id}_kg`).value||'0'),
-        rest_seconds: parseInt(document.getElementById(`ex_${e.id}_rest`).value||'90',10),
-        intensity: parseInt(document.getElementById(`ex_${e.id}_int`).value||'0',10),
-        external_url: (document.getElementById(`ex_${e.id}_url`).value||'').trim() || null
-      };
-      const t = GymAPI.getToken();
-      const r = await fetch(`${GymAPI.baseURL}/trainer/exercises/${encodeURIComponent(id)}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify(payload) });
-      if (!r.ok) return alert('Salvataggio esercizio fallito');
-      openPlan(currentPlan);
     }
 
     async function createPlan() {
@@ -656,30 +1270,11 @@
       await loadPlans();
     }
 
-    async function createSession() {
-      if (!currentPlan) return alert('Apri una scheda');
-      const nome = prompt('Nome sessione?');
-      if (nome === null) return;
-      const t = GymAPI.getToken();
-      const r = await fetch(`${GymAPI.baseURL}/trainer/sessions`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ scheda_id: currentPlan.id, nome })});
-      if (!r.ok) return alert('Creazione sessione fallita');
-      openPlan(currentPlan);
-    }
-
     async function deleteSession(id) {
       if (!confirm('Eliminare la sessione?')) return;
       const t = GymAPI.getToken();
       const r = await fetch(`${GymAPI.baseURL}/trainer/sessions/${encodeURIComponent(id)}`, { method:'DELETE', headers:{ Authorization:'Bearer '+t }});
       if (!r.ok) return alert('Eliminazione sessione fallita');
-      openPlan(currentPlan);
-    }
-
-    async function createExercise(sessionId) {
-      const name = prompt('Nome esercizio?');
-      if (name === null) return;
-      const t = GymAPI.getToken();
-      const r = await fetch(`${GymAPI.baseURL}/trainer/exercises`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ sessione_id: sessionId, name })});
-      if (!r.ok) return alert('Creazione esercizio fallita');
       openPlan(currentPlan);
     }
 
@@ -690,6 +1285,24 @@
       if (!r.ok) return alert('Eliminazione esercizio fallita');
       openPlan(currentPlan);
     }
+
+    // Chiudi popup con ESC
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.popup-overlay.active').forEach(popup => {
+          closePopup(popup.id);
+        });
+      }
+    });
+
+    // Chiudi popup cliccando fuori
+    document.querySelectorAll('.popup-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+          closePopup(this.id);
+        }
+      });
+    });
 
     // Init
     loadClients();

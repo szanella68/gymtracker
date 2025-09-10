@@ -18,6 +18,15 @@ async function ensureSupabaseSchema() {
 
   const sql = `
   create extension if not exists "uuid-ossp";
+
+  -- Add admin column to auth.users if it doesn't exist
+  do $$ 
+  begin
+    if not exists (select 1 from information_schema.columns where table_schema = 'auth' and table_name = 'users' and column_name = 'admin') then
+      alter table auth.users add column admin boolean default false;
+    end if;
+  end $$;
+
   create table if not exists user_profiles (
     id uuid primary key references auth.users(id) on delete cascade,
     phone text,
@@ -33,6 +42,14 @@ async function ensureSupabaseSchema() {
     created_at timestamp default now(),
     updated_at timestamp default now()
   );
+
+  -- Remove user_type column from user_profiles if it exists (cleanup)
+  do $$ 
+  begin
+    if exists (select 1 from information_schema.columns where table_name = 'user_profiles' and column_name = 'user_type') then
+      alter table user_profiles drop column user_type;
+    end if;
+  end $$;
   create or replace function update_updated_at_column()
   returns trigger as $$
   begin

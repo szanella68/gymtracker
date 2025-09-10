@@ -96,7 +96,7 @@ router.post('/login', async (req, res) => {
     });
     const supaUser = await userRes.json();
 
-    // Ensure profile exists for new users (via REST with user token) without overwriting existing user_type
+    // Ensure profile exists for new users (via REST with user token) - solo per dati profilo, non per admin
     try {
       const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(supaUser.id)}&select=id`, {
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` }
@@ -104,7 +104,7 @@ router.post('/login', async (req, res) => {
       if (checkRes.ok) {
         const arr = await checkRes.json();
         if (!Array.isArray(arr) || arr.length === 0) {
-          // Crea profilo con user_type='standard' di default
+          // Crea profilo base (senza user_type che non serve più)
           await fetch(`${SUPABASE_URL}/rest/v1/user_profiles`, {
             method: 'POST',
             headers: {
@@ -115,8 +115,7 @@ router.post('/login', async (req, res) => {
             },
             body: JSON.stringify({ 
               id: supaUser.id, 
-              email: supaUser.email,
-              user_type: 'standard' // Esplicito: nuovo utente = standard
+              email: supaUser.email
             })
           });
         }
@@ -125,22 +124,23 @@ router.post('/login', async (req, res) => {
       console.error('Error ensuring profile:', profileError);
     }
 
-    // IMPORTANTE: Determina user_type SOLO dalla tabella user_profiles
+    // IMPORTANTE: Determina user_type SOLO dalla colonna admin in auth.users
     let userType = 'standard'; // Default
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
     try {
-      const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(supaUser.id)}&select=user_type`, {
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` }
+      const authRes = await fetch(`${SUPABASE_URL}/rest/v1/auth.users?id=eq.${encodeURIComponent(supaUser.id)}&select=admin`, {
+        headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` }
       });
       
-      if (profileRes.ok) {
-        const profileArr = await profileRes.json();
-        if (Array.isArray(profileArr) && profileArr.length && profileArr[0]?.user_type) {
-          userType = profileArr[0].user_type === 'admin' ? 'admin' : 'standard';
-          console.log(`[Login] user_type from DB: ${profileArr[0].user_type} → final: ${userType}`);
+      if (authRes.ok) {
+        const authArr = await authRes.json();
+        if (Array.isArray(authArr) && authArr.length && authArr[0]?.admin === true) {
+          userType = 'admin';
+          console.log(`[Login] admin from auth.users: ${authArr[0].admin} → final: ${userType}`);
         }
       }
     } catch (dbError) {
-      console.error('Error fetching user_type from profiles:', dbError);
+      console.error('Error fetching admin status from auth.users:', dbError);
       // userType rimane 'standard' in caso di errore
     }
 
@@ -207,7 +207,7 @@ router.post('/signin', async (req, res) => {
 
     console.log('✅ Login riuscito per:', user.email, 'ID:', user.id);
 
-    // *** FIX: Verifica/Crea profilo controllando SOLO tabella user_profiles ***
+    // *** FIX: Verifica/Crea profilo controllando user_profiles solo per dati profilo ***
     let profileData = null;
     let userType = 'standard'; // Default
 
@@ -221,13 +221,12 @@ router.post('/signin', async (req, res) => {
         const profiles = await checkRes.json();
         if (Array.isArray(profiles) && profiles.length > 0) {
           profileData = profiles[0];
-          userType = profileData.user_type === 'admin' ? 'admin' : 'standard';
-          console.log('✅ Profilo utente esistente:', profileData.id, 'user_type:', userType);
+          console.log('✅ Profilo utente esistente:', profileData.id);
         } else {
           console.log('⚠️ Profilo utente mancante per:', user.email);
           console.log('🔧 Creando profilo utente...');
           
-          // Se il profilo non esiste, crealo con user_type='standard'
+          // Se il profilo non esiste, crealo (senza user_type)
           const createRes = await fetch(`${SUPABASE_URL}/rest/v1/user_profiles`, {
             method: 'POST',
             headers: {
@@ -239,15 +238,13 @@ router.post('/signin', async (req, res) => {
             body: JSON.stringify({
               id: user.id,
               email: user.email,
-              full_name: user.user_metadata?.full_name || '',
-              user_type: 'standard' // Nuovo utente = sempre standard
+              full_name: user.user_metadata?.full_name || ''
             })
           });
 
           if (createRes.ok) {
             const newProfiles = await createRes.json();
             profileData = Array.isArray(newProfiles) ? newProfiles[0] : newProfiles;
-            userType = 'standard';
             console.log('✅ Profilo utente creato:', profileData);
           } else {
             console.error('❌ ERRORE: Impossibile creare profilo utente');
@@ -265,8 +262,26 @@ router.post('/signin', async (req, res) => {
       return res.status(500).json({ error: 'Errore interno nella gestione profilo' });
     }
 
-    // *** IMPORTANTE: user_type viene SOLO dalla tabella user_profiles ***
-    console.log(`[Login] user_type from DB: ${userType} (email: ${user.email})`);
+    // *** IMPORTANTE: user_type viene SOLO dalla colonna admin in auth.users ***
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+    try {
+      const authRes = await fetch(`${SUPABASE_URL}/rest/v1/auth.users?id=eq.${encodeURIComponent(user.id)}&select=admin`, {
+        headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` }
+      });
+      
+      if (authRes.ok) {
+        const authArr = await authRes.json();
+        if (Array.isArray(authArr) && authArr.length && authArr[0]?.admin === true) {
+          userType = 'admin';
+          console.log(`[Signin] admin from auth.users: ${authArr[0].admin} → final: ${userType}`);
+        }
+      }
+    } catch (dbError) {
+      console.error('Error fetching admin status from auth.users:', dbError);
+      // userType rimane 'standard' in caso di errore
+    }
+
+    console.log(`[Signin] user_type final: ${userType} (email: ${user.email})`);
 
     res.status(200).json({
       message: 'Login effettuato con successo!',
