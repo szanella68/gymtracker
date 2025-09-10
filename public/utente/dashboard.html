@@ -6,27 +6,21 @@
     <title>GymTracker - Il mio Dashboard</title>
     <base href="/gymtracker/">
     <link rel="stylesheet" href="shared/css/shared.css">
+    <link rel="stylesheet" href="trainer/css/trainer.css">
     <link rel="stylesheet" href="utente/css/utente.css">
 </head>
 <body>
     <div data-include="shared/partials/header_user.html"></div>
-    <main class="user-dashboard">
+    <main class="trainer-dashboard">
         <div class="dashboard-header">
-            <h1>🏋️ La Mia Dashboard</h1>
-            <div class="user-welcome">
+            <h1>🏋️ Dashboard Utente</h1>
+            <div class="trainer-actions">
                 <span id="userWelcome">Benvenuto!</span>
             </div>
         </div>
-        
-        <!-- Quick Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">🏃</div>
-                <div class="stat-info">
-                    <h3 id="adherenceRate">--</h3>
-                    <p>Aderenza questo mese</p>
-                </div>
-            </div>
+
+        <!-- User Stats -->
+        <div class="trainer-stats stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">💪</div>
                 <div class="stat-info">
@@ -35,53 +29,54 @@
                 </div>
             </div>
             <div class="stat-card">
+                <div class="stat-icon">🏃</div>
+                <div class="stat-info">
+                    <h3 id="adherenceRate">--</h3>
+                    <p>Aderenza media</p>
+                </div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-icon">📈</div>
                 <div class="stat-info">
                     <h3 id="progressTrend">--</h3>
-                    <p>Tendenza progressi</p>
+                    <p>Giorni di streak</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Navigation Menu -->
-       <!-- Navigation Menu -->
-        <div class="nav-menu">
+
+        <!-- Navigazione principale -->
+        <div class="trainer-nav nav-menu">
             <a href="utente/calendario.html" class="nav-card primary">
                 <div class="nav-icon">📅</div>
                 <h3>Il Mio Calendario</h3>
-                <p>Allenamenti programmati e da completare</p>
+                <p>Visualizza allenamenti programmati</p>
             </a>
             
             <a href="utente/schede.html" class="nav-card">
                 <div class="nav-icon">📋</div>
-                <h3>I Miei Programmi di Allenamento</h3>
-                <p>Visualizza i programmi di allenamento (SCHEDE)</p>
+                <h3>I Miei Programmi</h3>
+                <p>Programmi di allenamento attivi</p>
             </a>
             
             <a href="utente/goals.html" class="nav-card">
                 <div class="nav-icon">🎯</div>
-                <h3>I Miei Obiettivi Personali</h3>
-                <p>Crea e traccia i tuoi obiettivi</p>
-            </a>
-
-            <a href="utente/profilo.html" class="nav-card">
-                <div class="nav-icon">👤</div>
-                <h3>Il mio Profilo</h3>
-                <p>Informazioni personali e obiettivi</p>
+                <h3>I Miei Obiettivi</h3>
+                <p>Traccia progressi e obiettivi</p>
             </a>
             
             <a href="utente/report.html" class="nav-card">
                 <div class="nav-icon">📊</div>
-                <h3>I miei Progressi</h3>
-                <p>Statistiche e analisi performance</p>
+                <h3>Report & Analytics</h3>
+                <p>Statistiche e performance</p>
             </a>
         </div>
         
-        <!-- Prossime Sessioni -->
-        <div class="upcoming-sessions">
-            <h2>🎯 Prossimi Allenamenti</h2>
+        <!-- Prossimi Allenamenti -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🎯 Prossimi Allenamenti</h3>
+            </div>
             <div id="upcomingSessions">
-                <!-- Popolato dinamicamente -->
                 <div class="empty-state">
                     <div class="empty-icon">📅</div>
                     <h3>Nessun allenamento programmato</h3>
@@ -89,15 +84,23 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Quick Actions -->
+
+        <!-- Attività recenti -->
         <div class="card">
             <div class="card-header">
-                <h3>⚡ Azioni Rapide</h3>
+                <h3>📋 Attività Recenti</h3>
+            </div>
+            <div id="recentActivities"></div>
+        </div>
+
+        <!-- Profilo e Obiettivi (come il link "Profilo" del trainer) -->
+        <div class="card">
+            <div class="card-header">
+                <h3>👤 Il Mio Profilo</h3>
             </div>
             <div class="nav-menu">
-                <div class="nav-card" onclick="window.location.href='/gymtracker/utente/profilo.html#goals'">
-                    <div class="nav-icon">🎯</div>
+                <div class="nav-card" onclick="window.location.href='/gymtracker/utente/profilo.html'">
+                    <div class="nav-icon">👤</div>
                     <h3>Aggiorna Obiettivi</h3>
                     <p>Modifica i tuoi obiettivi fitness</p>
                 </div>

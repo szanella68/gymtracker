@@ -469,6 +469,35 @@ router.post('/schedule', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Delete a scheduled item (remove planned log)
+router.put('/schedule/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { date } = req.body || {};
+    if (!date) return res.status(400).json({ error: 'date required (YYYY-MM-DD)' });
+    
+    if (pgPool) {
+      console.log('[trainer/schedule][PUT][PG]', { id, date });
+      await pgPool.query('update workout_logs set workout_date = $1, updated_at = now() where id = $2', [date, id]);
+      res.json({ ok: true });
+    } else {
+      console.log('[trainer/schedule][PUT][REST]', { id, date });
+      const r = await fetch(restUrl(`workout_logs?id=eq.${encodeURIComponent(id)}`), {
+        method: 'PATCH', 
+        headers: { ...srHeaders(), 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ workout_date: date })
+      });
+      if (!r.ok) {
+        const details = await r.text().catch(() => '');
+        return res.status(500).json({ error: 'Failed to update schedule', details });
+      }
+      res.json({ ok: true });
+    }
+  } catch (e) { 
+    console.error('[trainer/schedule][PUT] error:', e);
+    res.status(500).json({ error: 'Failed to update schedule' }); 
+  }
+});
+
 router.delete('/schedule/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const id = req.params.id;

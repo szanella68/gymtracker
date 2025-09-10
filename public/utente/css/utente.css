@@ -117,20 +117,9 @@
 }
 
 /* Dashboard Styles */
-.user-dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
+/* Removed - using trainer-dashboard class now */
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-  gap: 15px;
-}
+/* Dashboard header styles inherited from trainer.css */
 
 .dashboard-header h1 {
   color: #333;

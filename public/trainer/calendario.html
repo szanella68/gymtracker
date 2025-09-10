@@ -20,12 +20,11 @@
     .calendar-nav { display:flex; gap: 8px; align-items:center; }
     .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
     .day-header { text-align:center; font-weight:600; color:#475569; padding: 6px 0; }
-    .day-cell { border:1px solid #e2e8f0; border-radius: 8px; min-height: 90px; padding: 6px; position: relative; background:#fff; cursor: default; }
     .day-cell.other-month { background: #fafafa; color:#94a3b8; }
     .day-cell.today { outline: 2px solid #6366f1; }
     .day-cell.selected { box-shadow: inset 0 0 0 2px #0ea5e9; }
     .day-number { position:absolute; top:6px; right:8px; font-size: 12px; color:#64748b; }
-    .day-events { display: flex; flex-direction: column; gap: 4px; margin-top: 16px; }
+    .day-events { display: flex; flex-direction: column; gap: 2px; margin-top: 16px; flex: 1; }
     .event-pill { background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; padding: 3px 6px; border-radius: 999px; font-size: 12px; display:inline-flex; align-items:center; gap:6px; }
     .event-pill .del { cursor:pointer; color:#ef4444; }
     .day-cell.drag-over { box-shadow: inset 0 0 0 2px #10b981; }
@@ -233,6 +232,8 @@
       background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%);
       cursor: pointer;
       transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
     }
 
     .day-cell:hover {
@@ -266,13 +267,18 @@
       background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
       color: #3730a3;
       border: 1px solid #c7d2fe;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      display: inline-flex;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 6px;
       transition: all 0.2s ease;
+      cursor: grab;
+      width: 100%;
+      min-height: 22px;
+      margin-bottom: 2px;
     }
 
     .event-pill:hover {
@@ -280,14 +286,36 @@
       box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
     }
 
+    .event-pill.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .event-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
     .event-pill .del {
       cursor: pointer;
       color: #ef4444;
       transition: color 0.2s ease;
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 12px;
     }
 
     .event-pill .del:hover {
       color: #dc2626;
+      background: rgba(239, 68, 68, 0.1);
     }
 
     /* Miglioramento controlli */
@@ -299,6 +327,16 @@
       padding: 8px 12px;
       border-radius: 6px;
       border: 1px solid #e2e8f0;
+    }
+
+    .btn-delete {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      border-color: #dc2626 !important;
+    }
+
+    .btn-delete:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+      border-color: #b91c1c !important;
     }
 
     .controls input[type="number"] {
@@ -458,7 +496,7 @@
               <label for="weeksInput">Estendi settimana:</label>
               <input id="weeksInput" type="number" min="1" max="52" value="1">
               <button class="btn-primary" onclick="extendCurrentWeek()">Estendi</button>
-              <button class="btn-logout" title="Elimina tutte le occorrenze dalla data selezionata in avanti" onclick="deleteFromSelected()">Elimina da data selezionata</button>
+              <button class="btn-primary btn-delete" title="Elimina tutte le occorrenze dalla data selezionata in avanti" onclick="deleteFromSelected()">Elimina da data</button>
             </div>
           </div>
 
@@ -502,7 +540,7 @@
     let planSessions = []; // sessions array
     let planExercises = {}; // sessionId -> [exercises]
     let scheduledItems = []; // items from backend for visible range
-    let draggedSessionId = null;
+    let draggedSessionId = null; let draggedEventId = null;
     let selectedDate = null; // used for highlighting and week extension
 
     // Clients loading
@@ -649,7 +687,7 @@
           <div class="day-cell ${isOther?'other-month':''} ${isToday?'today':''} ${isSelected?'selected':''}" data-date="${dateStr}">
             <div class="day-number">${d.getDate()}</div>
             <div class="day-events">
-              ${items.map(it => `<span class=\"event-pill\" data-item-id=\"${it.id}\">${Utils.escapeHtml(it.sessioni?.nome || it.session_name || 'Sessione')} <span class=\"del\" title=\"Elimina\" data-del-id=\"${it.id}\">✕</span></span>`).join('')}
+              ${items.map(it => `<span class=\"event-pill\" data-item-id=\"${it.id}\" draggable=\"true\"><span class=\"event-text\">${Utils.escapeHtml(it.sessioni?.nome || it.session_name || 'Sessione')}</span><span class=\"del\" title=\"Elimina\" data-del-id=\"${it.id}\">✕</span></span>`).join('')}
             </div>
           </div>`;
       });
@@ -673,10 +711,20 @@
           e.preventDefault();
           cell.classList.remove('drag-over');
           const sessionId = draggedSessionId || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
+          const eventId = draggedEventId;
           draggedSessionId = null;
-          if (!sessionId || !selectedClient) return;
+          draggedEventId = null;
+          
+          if (!selectedClient) return;
           if (cell.classList.contains('other-month')) { return; }
-          await createScheduledItem(sessionId, cell.dataset.date);
+          
+          if (eventId) {
+            // Moving existing event
+            await moveScheduledItem(eventId, cell.dataset.date);
+          } else if (sessionId) {
+            // Creating new event
+            await createScheduledItem(sessionId, cell.dataset.date);
+          }
         });
       });
 
@@ -687,6 +735,22 @@
           const id = del.getAttribute('data-del-id');
           if (!confirm('Eliminare questa pianificazione?')) return;
           await deleteScheduledItem(id);
+        });
+      });
+
+      // Bind drag events for existing events
+      grid.querySelectorAll('.event-pill').forEach(pill => {
+        pill.addEventListener('dragstart', (e) => {
+          e.stopPropagation();
+          pill.classList.add('dragging');
+          draggedEventId = pill.getAttribute('data-item-id');
+          e.dataTransfer.setData('text/plain', draggedEventId);
+        });
+        
+        pill.addEventListener('dragend', (e) => {
+          e.stopPropagation();
+          pill.classList.remove('dragging');
+          draggedEventId = null;
         });
       });
     }
@@ -736,6 +800,30 @@
       } catch (e) {
         console.error('[Calendario] createScheduledItem network error', e);
         alert('Errore di rete nella creazione');
+      }
+    }
+
+    async function moveScheduledItem(itemId, newDate) {
+      try {
+        const t = GymAPI.getToken();
+        console.log('[Calendario] PUT schedule move', { itemId, newDate });
+        const r = await fetch(`${GymAPI.baseURL}/trainer/schedule/${encodeURIComponent(itemId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + t },
+          body: JSON.stringify({ date: newDate })
+        });
+        if (!r.ok) {
+          const err = await r.text().catch(()=> '');
+          console.error('[Calendario] moveScheduledItem failed', err);
+          alert('Errore spostamento: ' + err);
+          return;
+        }
+        console.log('[Calendario] Item moved successfully');
+        await loadScheduleForMonth();
+        renderCalendar();
+      } catch (e) {
+        console.error('[Calendario] moveScheduledItem network error', e);
+        alert('Errore di rete nello spostamento');
       }
     }
 
