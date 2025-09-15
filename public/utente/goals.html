@@ -20,7 +20,7 @@
     <div class="card">
       <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
         <h1>🎯  I miei Obiettivi Personali</h1>
-        <button class="btn-primary" onclick="openCreateGoal()">+ Aggiungi</button>
+        <button class="btn btn-add btn-with-icon" onclick="openCreateGoal()">➕ Aggiungi</button>
       </div>
       <div id="goalsList" class="weight-history"></div>
     </div>
@@ -78,9 +78,9 @@
               <div style="font-size:12px; color:#6c757d;">${g.target_date? 'Scadenza: '+Utils.formatDate(g.target_date): ''} • Stato: ${g.status}</div>
             </div>
             <div>
-              <button class="btn btn-sm" onclick="openEditGoal('${g.id}')">Modifica</button>
-              <button class="btn btn-sm" onclick="openProgress('${g.id}','${Utils.escapeHtml(g.title)}')">Progresso</button>
-              ${g.target_type==='weight' ? '' : `<button class="btn btn-sm" onclick="deleteGoal('${g.id}')">Elimina</button>`}
+              <button class="btn btn-blue btn-sm btn-with-icon" onclick="openEditGoal('${g.id}')">✏️ Modifica</button>
+              <button class="btn btn-blue btn-sm btn-with-icon" onclick="openProgress('${g.id}','${Utils.escapeHtml(g.title)}')">📈 Progresso</button>
+              ${g.target_type==='weight' ? '' : `<button class=\"btn btn-delete btn-sm btn-with-icon\" onclick=\"deleteGoal('${g.id}')\">🗑 Elimina</button>`}
             </div>
           </div>`).join('');
       } catch (e) {
@@ -144,7 +144,7 @@
               <input id="goalDesc" type="text" placeholder="Dettagli opzionali">
             </div>
             <div class="form-group">
-              <button class="btn-primary" onclick="createGoal()">Crea</button>
+              <button class="btn btn-save btn-with-icon" onclick="createGoal()">✅ Crea</button>
             </div>
           </div>
         </div>`;
@@ -217,7 +217,7 @@
               </select>
             </div>
             <div class="form-group">
-              <button class="btn-primary" onclick="updateGoal('${id}')">Salva</button>
+              <button class="btn btn-save btn-with-icon" onclick="updateGoal('${id}')">💾 Salva</button>
             </div>
           </div>
         </div>`;
@@ -285,7 +285,7 @@
             <input id="progressNote" type="text" placeholder="Nota (opzionale)"/>
           </div>
           <div class="form-group">
-            <button class="btn-primary" onclick="addProgress('${id}')">Aggiungi</button>
+            <button class="btn btn-add btn-with-icon" onclick="addProgress('${id}')">➕ Aggiungi</button>
           </div>
         </div>
       </div>`;

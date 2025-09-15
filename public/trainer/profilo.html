@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="shared/css/shared.css">
   <link rel="stylesheet" href="trainer/css/trainer.css">
   <style>
-    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+    /* Grid layout moved to shared.css (.page-grid) */
 
     /* Stili moderni per la sezione clienti */
     .client-selector-panel {
@@ -17,8 +17,10 @@
       border: 1px solid #e2e8f0;
       border-radius: 16px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-      overflow: hidden;
+      overflow: visible; /* evita clipping di menu a tendina */
       min-height: 500px;
+      position: relative; /* stacking context */
+      z-index: 10; /* sopra al contenuto di destra */
     }
 
     .panel-header {
@@ -47,53 +49,9 @@
       text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
 
-    .modern-select {
-      width: 100%;
-      padding: 10px 14px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      background: white;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-
-    .modern-select:focus {
-      outline: none;
-      border-color: #10b981;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-    }
-
-    .modern-select:hover {
-      border-color: #cbd5e1;
-    }
-
     .client-selection-section {
       padding: 24px;
       border-bottom: 1px solid #f1f5f9;
-    }
-
-    .modern-label {
-      display: block;
-    }
-
-    .label-text {
-      display: block;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 8px;
-      font-size: 14px;
-    }
-
-    .primary-select {
-      border-color: #10b981;
-      background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
-    }
-
-    .primary-select:focus {
-      border-color: #059669;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
     }
 
     .client-info-section {
@@ -186,39 +144,7 @@
       padding: 24px;
     }
 
-    /* Tab system */
-    .profile-tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 24px;
-      background: #f8fafc;
-      border-radius: 8px;
-      padding: 4px;
-    }
-
-    .profile-tab {
-      flex: 1;
-      padding: 10px 16px;
-      border: none;
-      background: transparent;
-      color: #6b7280;
-      font-weight: 500;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 14px;
-    }
-
-    .profile-tab:hover {
-      background: #f1f5f9;
-      color: #374151;
-    }
-
-    .profile-tab.active {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-    }
+    /* Tabs now centralized in shared.css (.profile-tabs / .profile-tab) */
 
     .tab-content {
       display: none;
@@ -228,68 +154,8 @@
       display: block;
     }
 
-    /* Form styling */
-    .profile-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-
-    .card-header-profile {
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      padding: 16px 20px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .card-header-profile h4 {
-      margin: 0;
-      color: #374151;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .card-body {
-      padding: 20px;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 10px 14px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: all 0.3s ease;
-      background: white;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      outline: none;
-      border-color: #10b981;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-    }
-
-    .form-group textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
+    /* Form styling centralized in shared.css (.form-group, inputs, labels) */
+    .card-body { padding: 20px; }
 
     .form-row {
       display: grid;
@@ -297,100 +163,9 @@
       gap: 16px;
     }
 
-    .form-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-    }
+    .form-actions { display: flex; gap: 12px; margin-top: 24px; }
 
-    .btn-save {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .btn-save:hover {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
-    }
-
-    .btn-save:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .btn-reset {
-      background: #6b7280;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-reset:hover {
-      background: #4b5563;
-    }
-
-    /* Dashboard back button: outlined -> filled on hover */
-    .trainer-actions .btn-secondary {
-      background: transparent;
-      color: #059669;
-      border: 2px solid #10b981;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.25s ease;
-    }
-
-    .trainer-actions .btn-secondary:hover {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #ffffff;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
-      border-color: transparent;
-    }
-
-    .success-message {
-      background: #dcfce7;
-      color: #166534;
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      border-left: 4px solid #10b981;
-    }
-
-    .error-message {
-      background: #fef2f2;
-      color: #dc2626;
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      border-left: 4px solid #ef4444;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: #6b7280;
-    }
-
-    .empty-icon {
-      font-size: 3rem;
-      margin-bottom: 16px;
-      opacity: 0.5;
-    }
+    /* Messages and empty-states now from shared.css */
 
     /* Responsive design */
     @media (max-width: 768px) {
@@ -424,11 +199,11 @@
     <div class="dashboard-header">
       <h1>👤 Gestione Profili Clienti</h1>
       <div class="trainer-actions">
-        <button class="btn-secondary" onclick="window.location.href='trainer/dashboard.html'">← Torna alla Dashboard</button>
+        <button class="btn btn-cancel btn-with-icon" onclick="window.location.href='trainer/dashboard.html'">← Torna alla Dashboard</button>
       </div>
     </div>
 
-    <div class="layout">
+    <div class="page-grid">
       <aside class="client-selector-panel">
         <!-- Header della sezione clienti -->
         <div class="panel-header">
@@ -639,7 +414,7 @@
                   </div>
                   <div class="form-group">
                     <label for="utenteAttivo">Utente attivo</label>
-                    <select id="utenteAttivo" name="utente_attivo">
+                    <select id="utenteAttivo" name="utente_attivo" class="modern-select">
                       <option value="true" ${profile.utente_attivo ? 'selected' : ''}>TRUE</option>
                       <option value="false" ${!profile.utente_attivo ? 'selected' : ''}>FALSE</option>
                     </select>
@@ -658,7 +433,7 @@
                 <div class="form-row">
                   <div class="form-group">
                     <label for="gender">Genere</label>
-                    <select id="gender" name="gender">
+                    <select id="gender" name="gender" class="modern-select">
                       <option value="">Seleziona</option>
                       <option value="male" ${profile.gender === 'male' ? 'selected' : ''}>Maschio</option>
                       <option value="female" ${profile.gender === 'female' ? 'selected' : ''}>Femmina</option>
@@ -673,8 +448,8 @@
                   </div>
                 </div>
                 <div class="form-actions">
-                  <button type="submit" class="btn-save">💾 Salva Informazioni</button>
-                  <button type="button" class="btn-reset" onclick="resetPersonalForm()">🔄 Ripristina</button>
+                  <button type="submit" class="btn btn-save btn-with-icon">💾 Salva Informazioni</button>
+                  <button type="button" class="btn btn-cancel btn-with-icon" onclick="resetPersonalForm()">🔄 Ripristina</button>
                 </div>
               </form>
             </div>
@@ -703,7 +478,7 @@
                 </div>
                 <div class="form-group">
                   <label for="experienceLevel">Livello di esperienza</label>
-                  <select id="experienceLevel" name="experience_level">
+                  <select id="experienceLevel" name="experience_level" class="modern-select primary-select">
                     <option value="">Seleziona</option>
                     <option value="beginner" ${profile.experience_level === 'beginner' ? 'selected' : ''}>Principiante</option>
                     <option value="intermediate" ${profile.experience_level === 'intermediate' ? 'selected' : ''}>Intermedio</option>
@@ -719,8 +494,8 @@
                   <textarea id="medicalNotes" name="medical_notes" placeholder="Condizioni mediche, limitazioni, note importanti...">${Utils.escapeHtml(profile.medical_notes || '')}</textarea>
                 </div>
                 <div class="form-actions">
-                  <button type="submit" class="btn-save">💾 Salva Obiettivi</button>
-                  <button type="button" class="btn-reset" onclick="resetFitnessForm()">🔄 Ripristina</button>
+                  <button type="submit" class="btn btn-save btn-with-icon">💾 Salva Obiettivi</button>
+                  <button type="button" class="btn btn-cancel btn-with-icon" onclick="resetFitnessForm()">🔄 Ripristina</button>
                 </div>
               </form>
             </div>

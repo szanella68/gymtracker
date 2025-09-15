@@ -105,34 +105,57 @@ router.put('/clients/:id', authenticateToken, requireAdmin, async (req, res) => 
     if (currentClient && updatedClient && currentClient.utente_attivo !== req.body.utente_attivo) {
       console.log(`[Trainer] Client ${id} status changed from ${currentClient.utente_attivo} to ${req.body.utente_attivo}`);
       
+      let webhookResult = null;
       if (req.body.utente_attivo === true) {
         console.log('[Trainer] Sending user.activated webhook');
-        webhookService.sendUserActivated({
-          userId: id,
-          email: currentClient.email,
-          name: currentClient.full_name,
-          phone: currentClient.phone,
-          activatedAt: new Date().toISOString(),
-          activatedBy: req.user.email
-        }).catch(err => {
-          console.error('Webhook error on user activation:', err);
-        });
+        try {
+          webhookResult = await webhookService.sendUserActivated({
+            userId: id,
+            email: currentClient.email,
+            name: currentClient.full_name,
+            phone: currentClient.phone,
+            dateOfBirth: currentClient.date_of_birth,
+            gender: currentClient.gender,
+            fitnessGoal: currentClient.fitness_goal,
+            experienceLevel: currentClient.experience_level,
+            height: currentClient.height_cm ? `${currentClient.height_cm} cm` : null,
+            weight: currentClient.weight_kg ? `${currentClient.weight_kg} kg` : null,
+            activatedAt: new Date().toISOString(),
+            userType: currentClient.user_type || 'standard',
+            active: true
+          });
+          console.log('[Trainer] User activation webhook result:', webhookResult);
+        } catch (webhookError) {
+          console.error('[Trainer] Webhook error on user activation:', webhookError);
+          webhookResult = { success: false, error: webhookError.message };
+        }
       } else if (req.body.utente_attivo === false) {
         console.log('[Trainer] Sending user.deactivated webhook');
-        webhookService.sendUserDeactivated({
-          userId: id,
-          email: currentClient.email,
-          name: currentClient.full_name,
-          phone: currentClient.phone,
-          deactivatedAt: new Date().toISOString(),
-          deactivatedBy: req.user.email
-        }).catch(err => {
-          console.error('Webhook error on user deactivation:', err);
-        });
+        try {
+          webhookResult = await webhookService.sendUserDeactivated({
+            userId: id,
+            email: currentClient.email,
+            name: currentClient.full_name,
+            phone: currentClient.phone,
+            dateOfBirth: currentClient.date_of_birth,
+            gender: currentClient.gender,
+            fitnessGoal: currentClient.fitness_goal,
+            experienceLevel: currentClient.experience_level,
+            height: currentClient.height_cm ? `${currentClient.height_cm} cm` : null,
+            weight: currentClient.weight_kg ? `${currentClient.weight_kg} kg` : null,
+            deactivatedAt: new Date().toISOString(),
+            userType: currentClient.user_type || 'standard',
+            active: false
+          });
+          console.log('[Trainer] User deactivation webhook result:', webhookResult);
+        } catch (webhookError) {
+          console.error('[Trainer] Webhook error on user deactivation:', webhookError);
+          webhookResult = { success: false, error: webhookError.message };
+        }
       }
     }
     
-    res.json({ client: updatedClient });
+    res.json({ client: updatedClient, webhook: webhookResult });
   } catch (e) {
     console.error('Failed to update client:', e);
     res.status(500).json({ error: 'Failed to update client' });
@@ -207,6 +230,7 @@ router.put('/plans/:id', authenticateToken, requireAdmin, async (req, res) => {
     const allowed = ['titolo','descrizione','attiva','autore','durata_settimane','sessioni_settimana','note','cancellata'];
     allowed.forEach(k => { if (req.body[k] !== undefined) payload[k] = req.body[k]; });
     if (Object.keys(payload).length === 0) return res.status(400).json({ error: 'No fields to update' });
+    
     const r = await fetch(restUrl(`schede?id=eq.${encodeURIComponent(id)}`), {
       method: 'PATCH',
       headers: { ...srHeaders(), Prefer: 'return=representation' },
@@ -214,7 +238,22 @@ router.put('/plans/:id', authenticateToken, requireAdmin, async (req, res) => {
     });
     const data = await r.json();
     if (!r.ok) return res.status(500).json({ error: 'Failed to update plan', details: data });
-    res.json({ plan: Array.isArray(data) ? data[0] : data });
+    
+    const plan = Array.isArray(data) ? data[0] : data;
+    let webhookResult = null;
+    
+    // Send webhook if plan was activated
+    if (payload.attiva === true) {
+      try {
+        webhookResult = await sendNewSchedaWebhook(plan);
+        console.log('[PUT /plans/:id] Webhook result:', webhookResult);
+      } catch (webhookError) {
+        console.error('[PUT /plans/:id] Webhook error:', webhookError);
+        webhookResult = { success: false, error: webhookError.message };
+      }
+    }
+    
+    res.json({ plan, webhook: webhookResult });
   } catch (e) {
     res.status(500).json({ error: 'Failed to update plan' });
   }
@@ -253,7 +292,21 @@ router.post('/plans/:id/activate', authenticateToken, requireAdmin, async (req, 
     const data = await onRes.json();
     if (!onRes.ok) return res.status(500).json({ error: 'Failed to activate plan', details: data });
 
-    res.json({ plan: Array.isArray(data) ? data[0] : data });
+    const activatedPlan = Array.isArray(data) ? data[0] : data;
+    
+    // Send webhook for new activated plan
+    let webhookResult = null;
+    try {
+      webhookResult = await sendNewSchedaWebhook(activatedPlan);
+    } catch (webhookError) {
+      console.error('[trainer/plans/activate] Webhook failed:', webhookError);
+      webhookResult = { success: false, error: webhookError.message };
+    }
+
+    res.json({ 
+      plan: activatedPlan,
+      webhook: webhookResult
+    });
   } catch (e) {
     res.status(500).json({ error: 'Failed to activate plan' });
   }
@@ -656,19 +709,126 @@ router.post('/schedule/extend', authenticateToken, requireAdmin, async (req, res
   }
 });
 
-module.exports = router;
+// Helper function to send comprehensive webhook for new activated scheda
+async function sendNewSchedaWebhook(plan) {
+  try {
+    const h = srHeaders();
+    
+    // 1. Get user profile data
+    const userRes = await fetch(restUrl(`user_profiles?id=eq.${encodeURIComponent(plan.user_id)}&select=*`), { headers: h });
+    const users = await userRes.json();
+    if (!userRes.ok || !Array.isArray(users) || users.length === 0) {
+      throw new Error('User not found for webhook');
+    }
+    const user = users[0];
+    
+    // 2. Get plan sessions
+    const sessionsRes = await fetch(restUrl(`sessioni?scheda_id=eq.${encodeURIComponent(plan.id)}&select=*`), { headers: h });
+    const sessions = await sessionsRes.json();
+    if (!sessionsRes.ok) {
+      console.warn('[sendNewSchedaWebhook] Failed to fetch sessions:', sessions);
+    }
+    
+    // 3. Get exercises for each session
+    const sessionDetails = [];
+    for (const session of (Array.isArray(sessions) ? sessions : [])) {
+      const exercisesRes = await fetch(restUrl(`esercizi?sessione_id=eq.${encodeURIComponent(session.id)}&select=*`), { headers: h });
+      const exercises = await exercisesRes.json();
+      sessionDetails.push({
+        ...session,
+        exercises: Array.isArray(exercises) ? exercises : []
+      });
+    }
+    
+    // 4. Format data as requested
+    const webhookData = {
+      utente: {
+        nome: user.full_name || 'N/A',
+        email: user.email || 'N/A',
+        telefono: user.phone || 'N/A',
+        altezza: user.height_cm ? `${user.height_cm} cm` : 'N/A',
+        peso: user.weight_kg ? `${user.weight_kg} kg` : 'N/A',
+        data_nascita: user.date_of_birth || 'N/A'
+      },
+      profilo: {
+        genere: user.gender || 'N/A',
+        livello: user.experience_level || 'N/A',
+        obiettivo: user.fitness_goal || 'N/A',
+        tipo_utente: user.user_type || 'standard',
+        attivo: !!user.utente_attivo
+      },
+      scheda: {
+        titolo: plan.titolo || 'N/A',
+        descrizione: plan.descrizione || 'N/A',
+        creata_il: plan.created_at ? new Date(plan.created_at).toISOString().slice(0, 10) : 'N/A',
+        durata_settimane: plan.durata_settimane || 'N/A',
+        sessioni_per_settimana: sessionDetails.length || 0,
+        sessioni: sessionDetails.map(session => ({
+          nome: session.nome || 'Sessione',
+          durata_stimata: session.durata_stimata ? `${session.durata_stimata} min` : 'N/A',
+          esercizi: session.exercises.map(ex => ({
+            nome: ex.nome || 'Esercizio',
+            serie: ex.serie || 'N/A',
+            ripetizioni: ex.ripetizioni || 'N/A',
+            pausa: ex.pausa_sec ? `${ex.pausa_sec}s` : 'N/A'
+          }))
+        }))
+      },
+      metadata: {
+        userId: plan.user_id,
+        activatedAt: new Date().toISOString(),
+        planId: plan.id
+      }
+    };
+    
+    // 5. Send webhook
+    return await webhookService.sendNewScheda(webhookData);
+    
+  } catch (error) {
+    console.error('[sendNewSchedaWebhook] Error:', error);
+    throw error;
+  }
+}
+
+// Debug endpoint to test webhook structures
+router.get('/test-webhooks', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await webhookService.testWebhookStructures();
+    res.json({ message: 'Webhook structure test completed. Check server logs.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to test webhook structures', details: error.message });
+  }
+});
+
 // Dashboard Overview: active/inactive counts, weekly matrix, and adherence rankings
 router.get('/dashboard/overview', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const weeks = Math.max(4, Math.min(16, parseInt(req.query.weeks || '8', 10)));
-    const end = new Date();
+    const weeks = Math.max(4, Math.min(52, parseInt(req.query.weeks || '8', 10)));
     const mondayOf = (d) => { const x = new Date(d); const day = x.getDay(); const diff = (day === 0 ? -6 : 1) - day; x.setDate(x.getDate()+diff); x.setHours(0,0,0,0); return x; };
-    const endMonday = mondayOf(end);
-    const weekStarts = [];
-    for (let i = weeks-1; i >= 0; i--) { const dt = new Date(endMonday); dt.setDate(dt.getDate() - 7*i); weekStarts.push(dt); }
-    const fmt = (d) => d.toISOString().slice(0,10);
-
+    
+    // Find the earliest workout date across all users
     const headers = srHeaders();
+    const earliestLogRes = await fetch(restUrl('workout_logs?select=workout_date&order=workout_date.asc&limit=1'), { headers });
+    const earliestLogs = earliestLogRes.ok ? await earliestLogRes.json() : [];
+    
+    let startMonday;
+    if (earliestLogs.length > 0) {
+      // Start from the Monday of the week containing the earliest workout
+      startMonday = mondayOf(new Date(earliestLogs[0].workout_date));
+    } else {
+      // Fallback: if no workouts, start from 24 weeks ago
+      const fallbackEnd = new Date();
+      startMonday = mondayOf(fallbackEnd);
+      startMonday.setDate(startMonday.getDate() - 7 * (weeks - 1));
+    }
+    
+    const weekStarts = [];
+    for (let i = 0; i < weeks; i++) { 
+      const dt = new Date(startMonday); 
+      dt.setDate(dt.getDate() + 7 * i); 
+      weekStarts.push(dt); 
+    }
+    const fmt = (d) => d.toISOString().slice(0,10);
     // Clients
     const cRes = await fetch(restUrl('user_profiles?select=id,full_name,email,utente_attivo&order=full_name.asc'), { headers });
     const clients = cRes.ok ? await cRes.json() : [];
@@ -725,3 +885,5 @@ router.get('/dashboard/overview', authenticateToken, requireAdmin, async (req, r
     res.status(500).json({ error: 'Failed to compute overview' });
   }
 });
+
+module.exports = router;

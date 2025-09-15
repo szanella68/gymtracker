@@ -110,12 +110,15 @@ GymTracker è un servizio di personal training digitale che mira a:
 
 ## Roadmap e Visione Futura
 
-### Fase 1 (MVP Attuale)
+### Fase 1 (MVP Completato) ✅
 - Sistema autenticazione dual-role
 - Dashboard base trainer e cliente
-- CRUD clienti e schede basic
+- CRUD clienti e schede completo
 - Tracking allenamenti completo
 - Sistema calendario integrato
+- **Sistema webhook N8N** (2025)
+- **Notifiche real-time** (2025)
+- **CSS unificato e responsive** (2025)
 
 ### Fase 2 (Enhancement)
 - Mobile app nativa (React Native)

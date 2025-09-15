@@ -3,7 +3,17 @@
     "allow": [
       "Bash(dir)",
       "Bash(mkdir:*)",
-      "Bash(dir docs)"
+      "Bash(dir docs)",
+      "Bash(npm run dev:*)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(pkill:*)",
+      "Bash(npm start)",
+      "Bash(find:*)",
+      "Bash(where claude)",
+      "Read(//c/Users/szane/AppData/Roaming/npm/**)"
     ],
     "deny": [],
     "ask": []

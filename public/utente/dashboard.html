@@ -11,7 +11,7 @@
 </head>
 <body>
     <div data-include="shared/partials/header_user.html"></div>
-    <main class="trainer-dashboard">
+    <main class="trainer-dashboard layout-fluid">
         <div class="dashboard-header">
             <h1>🏋️ Dashboard Utente</h1>
             <div class="trainer-actions">
@@ -200,7 +200,7 @@
                             <div class="empty-icon">📅</div>
                             <h3>Nessun allenamento imminente</h3>
                             <p>Controlla il tuo calendario per vedere tutte le pianificazioni.</p>
-                            <button class="btn-primary" onclick="window.location.href='/gymtracker/utente/calendario.html'">Visualizza Calendario</button>
+                    <button class="btn btn-blue btn-with-icon" onclick="window.location.href='/gymtracker/utente/calendario.html'">📅 Visualizza Calendario</button>
                         </div>`;
                     return;
                 }
@@ -221,7 +221,7 @@
                         <div class="empty-icon">⚠️</div>
                         <h3>Errore nel caricamento</h3>
                         <p>Impossibile caricare i prossimi allenamenti.</p>
-                        <button class="btn-primary" onclick="loadUpcomingSessions()">Riprova</button>
+                    <button class="btn btn-blue" onclick="loadUpcomingSessions()">Riprova</button>
                     </div>
                 `;
             }

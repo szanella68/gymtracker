@@ -68,3 +68,4 @@ echo.
 echo (GymTracker) Finestra bloccata. Premi un tasto per chiudere...
 pause >nul
 endlocal
+

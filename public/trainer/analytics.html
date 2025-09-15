@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymTracker - Analytics Trainer (Mock)</title>
+  <base href="/gymtracker/" />
+  <link rel="stylesheet" href="shared/css/shared.css" />
+  <link rel="stylesheet" href="trainer/css/trainer.css" />
+  <style>
+    .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .kpi-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .kpi-icon { font-size: 1.6rem; }
+    .kpi-val { font-size: 1.6rem; font-weight: 700; color: #1f2937; }
+    .kpi-label { font-size: 0.85rem; color: #6b7280; }
+    .mock-chart { padding: 28px 16px; text-align: center; background: #f8f9fa; border-radius: 8px; margin: 12px 0; }
+    .mock-chart-bars { display: flex; justify-content: center; align-items: end; gap: 8px; margin-top: 12px; height: 120px; }
+    .chart-bar { width: 24px; background: linear-gradient(to top, #60a5fa, #3b82f6); border-radius: 3px 3px 0 0; opacity: 0.95; }
+    .table-simple { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .table-simple th, .table-simple td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; font-size: 14px; text-align: left; }
+    .table-simple th { background: #f8f9fa; font-weight: 600; color: #495057; }
+  </style>
+</head>
+<body>
+  <div data-include="shared/partials/header.html"></div>
+  <main class="trainer-dashboard">
+    <div class="dashboard-header">
+      <h1>📈 Analytics Trainer</h1>
+      <div class="trainer-actions"></div>
+    </div>
+
+    <!-- Filtri (Mock) -->
+    <div class="card">
+      <div class="card-header"><h3>🎯 Filtri</h3></div>
+      <div class="card-body">
+        <div class="filters-grid">
+          <div class="form-group inline">
+            <label>Periodo</label>
+            <select class="modern-select">
+              <option>Ultimi 30 giorni</option>
+              <option>Ultimi 90 giorni</option>
+              <option>Ultimo anno</option>
+            </select>
+          </div>
+          <div class="form-group inline">
+            <label>Raggruppa</label>
+            <select class="modern-select">
+              <option>Settimana</option>
+              <option>Mese</option>
+            </select>
+          </div>
+          <div class="form-group inline">
+            <label>Segmento</label>
+            <select class="modern-select">
+              <option>Tutti</option>
+              <option>Attivi</option>
+              <option>Inattivi</option>
+              <option>Principianti</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions-section" style="margin-top:12px;">
+          <button class="btn btn-save btn-with-icon">✅ Applica</button>
+          <button class="btn btn-cancel">Annulla</button>
+          <button class="btn btn-blue btn-with-icon">📥 Esporta CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI (Mock) -->
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-icon">👥</div><div><div class="kpi-val" id="kpiActive">--</div><div class="kpi-label">Clienti attivi</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon">🔥</div><div><div class="kpi-val" id="kpiAdh">--%</div><div class="kpi-label">Aderenza media</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon">📅</div><div><div class="kpi-val" id="kpiSessions">--</div><div class="kpi-label">Sessioni completate</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon">🧭</div><div><div class="kpi-val" id="kpiRetention">--%</div><div class="kpi-label">Retention 60 giorni</div></div></div>
+    </div>
+
+    <!-- Trend (Mock) -->
+    <div class="card">
+      <div class="card-header"><h3>📈 Aderenza nel tempo</h3></div>
+      <div class="card-body">
+        <div class="mock-chart">
+          <div class="chart-icon">📊</div>
+          <p>Andamento aderenza (mock)</p>
+          <div class="mock-chart-bars" id="chartAdh"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>📅 Sessioni completate per settimana</h3></div>
+      <div class="card-body">
+        <div class="mock-chart">
+          <div class="chart-icon">📊</div>
+          <p>Volume sessioni (mock)</p>
+          <div class="mock-chart-bars" id="chartSessions"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabelle insight (Mock) -->
+    <div class="card">
+      <div class="card-header"><h3>🏅 Top Miglioramenti</h3></div>
+      <div class="card-body">
+        <table class="table-simple" id="tblTop">
+          <thead><tr><th>Cliente</th><th>Δ Aderenza</th><th>Δ Intensità</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>⚠️ Clienti a Rischio</h3></div>
+      <div class="card-body">
+        <table class="table-simple" id="tblRisk">
+          <thead><tr><th>Cliente</th><th>Aderenza</th><th>Ultima sessione</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="shared/js/include.js"></script>
+  <script>
+    // Mock: genera dati casuali riproducibili (no logica reale)
+    function seedRand(n){ let s = n; return ()=> (s = (s*9301+49297)%233280)/233280; }
+    const rnd1 = seedRand(42), rnd2 = seedRand(99);
+
+    function renderBars(elId, n, r){ const el = document.getElementById(elId); if(!el) return; el.innerHTML = Array.from({length:n}).map(()=>`<div class="chart-bar" style="height:${Math.floor(40 + r()*60)}%"></div>`).join(''); }
+    function fillTable(id, rows){ const tb = document.querySelector(`#${id} tbody`); if (!tb) return; tb.innerHTML = rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]??''}</td></tr>`).join(''); }
+
+    // KPI mock
+    document.getElementById('kpiActive').textContent = '42';
+    document.getElementById('kpiAdh').textContent = '78%';
+    document.getElementById('kpiSessions').textContent = '312';
+    document.getElementById('kpiRetention').textContent = '63%';
+
+    // Charts mock
+    renderBars('chartAdh', 12, rnd1);
+    renderBars('chartSessions', 12, rnd2);
+
+    // Tables mock
+    fillTable('tblTop', [ ['Mario R.', '+22%', '+1.8'], ['Anna B.', '+17%', '+1.2'], ['Luca P.', '+13%', '+0.9'] ]);
+    fillTable('tblRisk', [ ['Marco S.', '41%', '8 giorni fa'], ['Elisa T.', '35%', '12 giorni fa'], ['Ilaria C.', '28%', '20 giorni fa'] ]);
+  </script>
+</body>
+</html>
+

@@ -9,9 +9,9 @@
   <link rel="stylesheet" href="shared/css/shared.css">
   <link rel="stylesheet" href="trainer/css/trainer.css">
   <style>
-    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
-    .sidebar { background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.08); min-height: 500px; }
-    .calendar-wrap { background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+    /* Grid now provided by shared.css as .page-grid; keep page-specific styles here */
+    .sidebar { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; border-radius: 16px; padding: 0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04); overflow: hidden; min-height: 500px; }
+    .calendar-wrap { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04); }
     .sidebar .empty { color: #64748b; text-align: center; padding: 16px; }
     .session-item { border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; margin-bottom: 8px; background:#f8fafc; cursor: grab; }
     .session-item:active { cursor: grabbing; }
@@ -38,8 +38,10 @@
       border: 1px solid #e2e8f0;
       border-radius: 16px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-      overflow: hidden;
+      overflow: visible; /* evita clipping di menu a tendina */
       min-height: 500px;
+      position: relative; /* crea stacking context per z-index */
+      z-index: 10; /* sopra al calendario a destra */
     }
 
     .panel-header {
@@ -68,54 +70,13 @@
       text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
 
-    .modern-select {
-      width: 100%;
-      padding: 10px 14px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      background: white;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-
-    .modern-select:focus {
-      outline: none;
-      border-color: #10b981;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-    }
-
-    .modern-select:hover {
-      border-color: #cbd5e1;
-    }
 
     .client-selection-section {
       padding: 24px;
       border-bottom: 1px solid #f1f5f9;
     }
 
-    .modern-label {
-      display: block;
-    }
-
-    .label-text {
-      display: block;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 8px;
-      font-size: 14px;
-    }
-
-    .primary-select {
-      border-color: #10b981;
-      background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
-    }
-
-    .primary-select:focus {
-      border-color: #059669;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-    }
+    /* modern-select, primary-select, label-text moved to shared.css */
 
     .active-plan-section {
       padding: 24px;
@@ -152,6 +113,8 @@
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
       overflow: hidden;
+      position: relative;
+      z-index: 1;
     }
 
     .calendar-header {
@@ -278,7 +241,7 @@
       cursor: grab;
       width: 100%;
       min-height: 22px;
-      margin-bottom: 2px;
+      flex: 1;
     }
 
     .event-pill:hover {
@@ -318,6 +281,56 @@
       background: rgba(239, 68, 68, 0.1);
     }
 
+    /* Context Menu Styles */
+    .context-menu {
+      position: fixed;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 8px 0;
+      z-index: 1000;
+      min-width: 200px;
+      max-width: 300px;
+      display: none;
+    }
+
+    .context-menu-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #374151;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .context-menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .context-menu-item:hover {
+      background-color: #f8fafc;
+    }
+
+    .context-menu-item.cancel {
+      color: #ef4444;
+      border-top: 1px solid #f1f5f9;
+      margin-top: 4px;
+    }
+
+    .context-menu-item.cancel:hover {
+      background-color: #fef2f2;
+    }
+
+    .context-menu-icon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
     /* Miglioramento controlli */
     .controls {
       display: flex;
@@ -329,15 +342,7 @@
       border: 1px solid #e2e8f0;
     }
 
-    .btn-delete {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-      border-color: #dc2626 !important;
-    }
-
-    .btn-delete:hover {
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-      border-color: #b91c1c !important;
-    }
+    /* delete button now uses shared .btn-delete (semantico) */
 
     .controls input[type="number"] {
       width: 70px;
@@ -441,7 +446,7 @@
       </div>
     </div>
 
-    <div class="layout">
+    <div class="page-grid">
       <aside class="client-selector-panel">
         <!-- Header della sezione clienti -->
         <div class="panel-header">
@@ -487,16 +492,16 @@
         <div class="calendar-content">
           <div class="calendar-toolbar">
             <div class="calendar-nav">
-              <button class="btn-secondary" title="Mese precedente" aria-label="Mese precedente" onclick="changeMonth(-1)">◀</button>
+              <button class="btn btn-blue" title="Mese precedente" aria-label="Mese precedente" onclick="changeMonth(-1)">◀</button>
               <div id="currentMonth" class="calendar-month">Caricamento...</div>
-              <button class="btn-secondary" title="Mese successivo" aria-label="Mese successivo" onclick="changeMonth(1)">▶</button>
-              <button class="btn-secondary" title="Vai a oggi" onclick="goToToday()">Oggi</button>
+              <button class="btn btn-blue" title="Mese successivo" aria-label="Mese successivo" onclick="changeMonth(1)">▶</button>
+              <button class="btn btn-blue" title="Vai a oggi" onclick="goToToday()">Oggi</button>
             </div>
             <div class="controls">
               <label for="weeksInput">Estendi settimana:</label>
               <input id="weeksInput" type="number" min="1" max="52" value="1">
-              <button class="btn-primary" onclick="extendCurrentWeek()">Estendi</button>
-              <button class="btn-primary btn-delete" title="Elimina tutte le occorrenze dalla data selezionata in avanti" onclick="deleteFromSelected()">Elimina da data</button>
+              <button class="btn btn-add" onclick="extendCurrentWeek()">Estendi</button>
+              <button class="btn btn-delete" title="Elimina tutte le occorrenze dalla data selezionata in avanti" onclick="deleteFromSelected()">Elimina da data</button>
             </div>
           </div>
 
@@ -542,6 +547,10 @@
     let scheduledItems = []; // items from backend for visible range
     let draggedSessionId = null; let draggedEventId = null;
     let selectedDate = null; // used for highlighting and week extension
+    let contextMenu = null;
+    let contextMenuTarget = null;
+    let longPressTimer = null;
+    let longPressStarted = false;
 
     // Clients loading
     async function loadClients() {
@@ -643,7 +652,7 @@
       html += `</div></div>`;
       box.innerHTML = html;
 
-      // Bind dragstart on session items
+      // Enable dual functionality: drag-and-drop from sidebar + context menu
       box.querySelectorAll('.session-item').forEach(el => {
         el.addEventListener('dragstart', (e) => {
           draggedSessionId = el.dataset.sessionId;
@@ -664,7 +673,10 @@
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const startDate = new Date(firstDay);
-      startDate.setDate(startDate.getDate() - firstDay.getDay());
+      // Calcola il lunedì della settimana che contiene il primo giorno del mese
+      const dayOfWeek = firstDay.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Per iniziare da lunedì
+      startDate.setDate(startDate.getDate() - daysFromMonday);
       const days = [];
       for (let i = 0; i < 42; i++) { // 6 weeks
         const d = new Date(startDate);
@@ -673,7 +685,7 @@
       }
 
       let html = '';
-      ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'].forEach(d => {
+      ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].forEach(d => {
         html += `<div class="day-header">${d}</div>`;
       });
       const today = new Date();
@@ -693,16 +705,63 @@
       });
       grid.innerHTML = html;
 
-      // Bind DnD on cells
+      // Bind events on cells
       grid.querySelectorAll('.day-cell').forEach(cell => {
         // selection
-        cell.addEventListener('click', () => {
+        cell.addEventListener('click', (e) => {
+          // Don't select if context menu is open
+          if (contextMenu && contextMenu.style.display !== 'none') {
+            hideContextMenu();
+            return;
+          }
           selectedDate = new Date(cell.dataset.date);
           grid.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
           cell.classList.add('selected');
         });
+
+        // Right-click context menu
+        cell.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          if (!selectedClient || !planSessions.length) return;
+          if (cell.classList.contains('other-month')) return;
+          
+          showContextMenu(e.pageX, e.pageY, cell.dataset.date);
+        });
+
+        // Mobile long-press support
+        cell.addEventListener('touchstart', (e) => {
+          if (!selectedClient || !planSessions.length) return;
+          if (cell.classList.contains('other-month')) return;
+          
+          longPressStarted = true;
+          longPressTimer = setTimeout(() => {
+            if (longPressStarted) {
+              e.preventDefault();
+              const touch = e.touches[0];
+              showContextMenu(touch.pageX, touch.pageY, cell.dataset.date);
+            }
+          }, 600); // 600ms long press
+        });
+
+        cell.addEventListener('touchmove', () => {
+          longPressStarted = false;
+          if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+        });
+
+        cell.addEventListener('touchend', () => {
+          longPressStarted = false;
+          if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+        });
+        // Keep drag-and-drop for both sessions and existing events
         cell.addEventListener('dragover', (e) => {
           if (!selectedClient) return; // need a client
+          if (!draggedEventId && !draggedSessionId) return; // need something to drop
           e.preventDefault();
           cell.classList.add('drag-over');
         });
@@ -716,13 +775,13 @@
           draggedEventId = null;
           
           if (!selectedClient) return;
-          if (cell.classList.contains('other-month')) { return; }
+          if (cell.classList.contains('other-month')) return;
           
           if (eventId) {
             // Moving existing event
             await moveScheduledItem(eventId, cell.dataset.date);
           } else if (sessionId) {
-            // Creating new event
+            // Creating new event from sidebar
             await createScheduledItem(sessionId, cell.dataset.date);
           }
         });
@@ -877,29 +936,143 @@
 
     async function extendCurrentWeek() {
       if (!selectedClient) return alert('Seleziona un cliente');
+      
+      if (!currentPlan) {
+        return alert('Il cliente selezionato non ha una scheda attiva da estendere');
+      }
+      
       const weeksField = document.getElementById('weeksInput');
       let weeks = parseInt(weeksField.value || '0', 10);
       if (!weeks && currentPlan?.durata_settimane) weeks = parseInt(currentPlan.durata_settimane, 10);
       if (!weeks || weeks < 1) return alert('Numero settimane non valido');
+      
       // Seleziona la settimana: se l'utente ha selezionato un giorno, usa quella settimana; altrimenti usa la prima occorrenza
       const startWeek = selectedDate ? mondayOf(new Date(selectedDate)).toISOString().slice(0,10) : 'first';
-      console.log('[Calendario] EXTEND', { user_id: selectedClient.id, start_week: startWeek, weeks });
+      
+      console.log('[Calendario] EXTEND', { user_id: selectedClient.id, start_week: startWeek, weeks, currentPlan: currentPlan?.titolo });
+      
       try {
         const t = GymAPI.getToken();
+        console.log('[Calendario] Making API call to:', `${GymAPI.baseURL}/trainer/schedule/extend`);
+        
         const r = await fetch(`${GymAPI.baseURL}/trainer/schedule/extend`, {
           method: 'POST',
           headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + t },
           body: JSON.stringify({ user_id: selectedClient.id, start_week: startWeek, weeks })
         });
+        
+        console.log('[Calendario] API response status:', r.status, r.statusText);
+        
         const data = await r.json().catch(()=> ({}));
-        if (!r.ok) { console.error('[Calendario] extend failed', data); return alert('Estensione fallita'); }
-        console.log('[Calendario] extend result', data);
+        console.log('[Calendario] API response data:', data);
+        
+        if (!r.ok) { 
+          console.error('[Calendario] extend failed', data); 
+          return alert('Estensione fallita: ' + (data.error || `Errore HTTP ${r.status}`)); 
+        }
+        
         await loadScheduleForMonth();
         renderCalendar();
-        alert(`Settimana estesa: inseriti ${data.inserted || 0} elementi`);
+        
+        const inserted = data.inserted || 0;
+        if (inserted === 0) {
+          alert('Estensione completata, ma nessun nuovo elemento è stato inserito. Possibili cause:\n- La settimana selezionata è già pianificata\n- Non ci sono sessioni da duplicare nella scheda');
+        } else {
+          alert(`Estensione completata: inseriti ${inserted} nuovi elementi nel calendario`);
+        }
       } catch (e) {
         console.error('[Calendario] extend network error', e);
         alert('Errore rete in estensione');
+      }
+    }
+
+    // Context Menu Functions
+    function createContextMenu() {
+      if (contextMenu) return;
+      
+      contextMenu = document.createElement('div');
+      contextMenu.className = 'context-menu';
+      contextMenu.id = 'sessionContextMenu';
+      document.body.appendChild(contextMenu);
+      
+      // Hide menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (contextMenu && !contextMenu.contains(e.target)) {
+          hideContextMenu();
+        }
+      });
+      
+      // Hide menu on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          hideContextMenu();
+        }
+      });
+    }
+
+    function showContextMenu(x, y, targetDate) {
+      if (!contextMenu) createContextMenu();
+      
+      contextMenuTarget = targetDate;
+      
+      // Build menu content
+      let html = '';
+      
+      // Add available sessions
+      planSessions.forEach(session => {
+        html += `
+          <div class="context-menu-item" data-session-id="${session.id}">
+            <span class="context-menu-icon">🏋️</span>
+            <span>${Utils.escapeHtml(session.nome || 'Sessione')}</span>
+          </div>`;
+      });
+      
+      // Add cancel option
+      html += `
+        <div class="context-menu-item cancel">
+          <span class="context-menu-icon">❌</span>
+          <span>Annulla</span>
+        </div>`;
+      
+      contextMenu.innerHTML = html;
+      
+      // Position menu
+      contextMenu.style.display = 'block';
+      contextMenu.style.left = x + 'px';
+      contextMenu.style.top = y + 'px';
+      
+      // Ensure menu stays within viewport
+      const rect = contextMenu.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      if (rect.right > viewportWidth) {
+        contextMenu.style.left = (x - rect.width) + 'px';
+      }
+      if (rect.bottom > viewportHeight) {
+        contextMenu.style.top = (y - rect.height) + 'px';
+      }
+      
+      // Bind click events
+      contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          
+          const sessionId = item.getAttribute('data-session-id');
+          if (sessionId) {
+            // Insert session into selected date
+            await createScheduledItem(sessionId, contextMenuTarget);
+          }
+          
+          hideContextMenu();
+        });
+      });
+    }
+
+    function hideContextMenu() {
+      if (contextMenu) {
+        contextMenu.style.display = 'none';
+        contextMenuTarget = null;
       }
     }
 

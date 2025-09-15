@@ -10,6 +10,7 @@ Documentazione tecnica completa dell'architettura, configurazione e deployment d
 - Authentication: Supabase Auth + JWT
 - Database: PostgreSQL (via Supabase)
 - File Storage: Supabase Storage
+- Webhooks: N8N Integration + Custom Service
 - Hosting: Windows Server + XAMPP
 
 ### Frontend
@@ -48,7 +49,8 @@ C:/filepubblici/gymtracker/
 ├── routes/
 │   ├── auth.js                  # Endpoint autenticazione
 │   ├── users.js                 # Endpoint gestione utenti
-│   └── trainer.js               # Endpoint trainer admin
+│   ├── trainer.js               # Endpoint trainer admin
+│   └── admin.js                 # Endpoint admin specifici
 │
 ├── scripts/
 │   ├── start_gymtracker.bat     # Script avvio Node.js (Windows)
@@ -69,30 +71,32 @@ C:/filepubblici/gymtracker/
     │   ├── dashboard.html       # Dashboard principale
     │   ├── profilo.html         # Gestione profilo
     │   ├── sessioni.html        # Gestione allenamenti
-    │   ├── calendario.html      # Pianificazione (TODO)
+    │   ├── calendario.html      # Pianificazione allenamenti (COMPLETATA)
+    │   ├── goals.html           # Gestione obiettivi fitness
+    │   ├── report.html          # Report e statistiche
     │   └── css/
     │       └── utente.css       # Stili interfaccia cliente
     │
     ├── trainer/                 # Interfaccia Trainer
     │   ├── dashboard.html       # Dashboard amministrativa
     │   ├── clienti.html         # Gestione clienti
-    │   ├── schede.html          # Creazione schede (TODO)
+    │   ├── schede.html          # Creazione/gestione schede (COMPLETATA)
+    │   ├── calendario.html      # Sistema calendario allenamenti
+    │   ├── profilo.html         # Gestione profili clienti
     │   └── css/
     │       └── trainer.css      # Stili interfaccia trainer
     │
     └── shared/                  # Componenti condivisi
         ├── css/
-        │   ├── shared.css       # Stili base comuni
-        │   ├── menu-component.css # Stili menu navigazione
-        │   └── responsive.css   # Media queries responsive
+        │   └── shared.css       # Stili base comuni UNIFICATI (include tutto)
         │
         ├── js/
-        │   └── core/
-        │       ├── api.js       # Client API Supabase
-        │       ├── auth.js      # Gestione autenticazione
-        │       ├── utils.js     # Utilità generiche
-        │       ├── template-loader.js # Sistema template
-        │       └── menu.js      # Gestione menu navigazione
+        │   ├── core/
+        │   │   ├── api.js       # Client API Supabase
+        │   │   └── utils.js     # Utilità generiche
+        │   ├── include.js       # Sistema template e inclusioni
+        │   ├── auth-supabase.js # Gestione autenticazione Supabase
+        │   └── webhooks.js      # Sistema notifiche webhook (NUOVO)
         │
         ├── partials/
         │   ├── header.html      # Header comune
@@ -104,11 +108,51 @@ C:/filepubblici/gymtracker/
             └── favicon.ico      # Icona browser
 ```
 
+## Sistemi Aggiunti e Miglioramenti (2025)
+
+### Sistema Webhook N8N
+- **File**: `services/webhookService.js`
+- **Scopo**: Integrazione con N8N per automazioni e notifiche
+- **Eventi supportati**: 
+  - `user.preregistered` - Nuovo utente registrato (profilo incompleto)
+  - `user.registered` - Profilo utente completato
+  - `user.activated` - Utente attivato dal trainer/admin
+  - `user.deactivated` - Utente disattivato
+  - `event.newscheda` - Nuova scheda allenamento attivata
+
+### Sistema Notifiche Frontend
+- **File**: `public/shared/js/webhooks.js`
+- **Scopo**: Notifiche popup per conferma invio webhook
+- **Funzioni**: `showWebhookNotification()`, `handleWebhookResult()`
+- **Stili**: Notifiche animate con auto-dismiss
+
+### CSS Unificato e Standardizzazione Button
+- **Stato**: Sistema CSS completamente ristrutturato (2025)
+- **File principale**: `public/shared/css/shared.css` - Sistema button centralizzato
+- **Alias semantici**: `.btn-add`, `.btn-save`, `.btn-delete`, `.btn-cancel` - Colori funzionali
+- **Modificatori**: `.btn-with-icon`, `.btn-sm`, `.btn-lg`, `.btn-block` - Size e stile
+- **File locali**: `trainer/css/trainer.css`, `utente/css/utente.css` - Solo stili specifici
+- **Context Menu**: Calendario trainer con dual functionality (drag-drop + right-click)
+- **Styling uniformato**: Calendari utente e trainer con identico aspetto visivo
+- **Status Progress**: 🟡 IN CORSO - Sistema 46% migrato con inconsistenze risolte
+- **Prossimi Steps**: Definire classi semantic in shared.css, eliminare duplicazioni
+- **Miglioramenti**: 
+  - Unified component system
+  - Consistent spacing e typography
+  - Modern gradient designs
+  - Responsive grid layouts
+  - Sistema di notifiche webhook integrate
+
+### Database Schema Aggiornamenti
+- **Nuove tabelle**: `user_goals`, `scheduled_sessions` implementate
+- **Campi aggiunti**: `exercises.intensity`, `exercises.external_url`
+- **Webhook metadata**: Tutti gli endpoint ora ritornano risultati webhook
+
 ## Configurazione Server (server.js)
 
 ### Porte e Indirizzi
 ```javascript
-const PORT = process.env.PORT || 3007;  // Porta Node.js
+const PORT = process.env.PORT || 3010;  // Porta Node.js (AGGIORNATA da 3007)
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://zanserver.sytes.net';
 ```
 
@@ -131,6 +175,7 @@ app.use(express.static('public'));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/trainer', trainerRoutes);
+app.use('/api/admin', adminRoutes);  // NUOVO: Endpoint admin specifici
 ```
 
 ### Health Check

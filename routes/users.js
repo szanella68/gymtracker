@@ -57,7 +57,9 @@ router.get('/me', authenticateToken, async (req, res) => {
                 email: req.user.email,
                 name: req.user.full_name || null,
                 phone: null,
-                registrationDate: ensuredProfile.created_at
+                registrationDate: ensuredProfile.created_at,
+                userType: 'preregistered',
+                active: false
               }).catch(err => {
                 console.error('Webhook error on profile preregistration:', err);
               });
@@ -212,14 +214,13 @@ router.put('/me', authenticateToken, async (req, res) => {
                 phone: up.phone,
                 dateOfBirth: up.date_of_birth,
                 gender: up.gender,
-                heightCm: up.height_cm,
-                weightKg: up.weight_kg,
+                height: up.height_cm ? `${up.height_cm} cm` : null,
+                weight: up.weight_kg ? `${up.weight_kg} kg` : null,
                 fitnessGoal: up.fitness_goal,
                 experienceLevel: up.experience_level,
-                medicalNotes: up.medical_notes,
-                emergencyContact: up.emergency_contact,
-                profileCompletedAt: new Date().toISOString(),
-                userActive: true
+                registrationDate: new Date().toISOString(),
+                userType: 'registered',
+                active: true
               }).catch(err => {
                 console.error('Webhook error on profile completion:', err);
               });
@@ -1034,34 +1035,57 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     if (currentUser.utente_attivo !== utente_attivo) {
       console.log(`[Admin] User ${userId} status changed from ${currentUser.utente_attivo} to ${utente_attivo}`);
       
+      let webhookResult = null;
       if (utente_attivo) {
         console.log('[Admin] Sending user.activated webhook');
-        webhookService.sendUserActivated({
-          userId: userId,
-          email: currentUser.email,
-          name: currentUser.full_name,
-          phone: currentUser.phone,
-          activatedAt: new Date().toISOString(),
-          activatedBy: req.user.email
-        }).catch(err => {
-          console.error('Webhook error on user activation:', err);
-        });
+        try {
+          webhookResult = await webhookService.sendUserActivated({
+            userId: userId,
+            email: currentUser.email,
+            name: currentUser.full_name,
+            phone: currentUser.phone,
+            dateOfBirth: currentUser.date_of_birth,
+            gender: currentUser.gender,
+            fitnessGoal: currentUser.fitness_goal,
+            experienceLevel: currentUser.experience_level,
+            height: currentUser.height_cm ? `${currentUser.height_cm} cm` : null,
+            weight: currentUser.weight_kg ? `${currentUser.weight_kg} kg` : null,
+            activatedAt: new Date().toISOString(),
+            userType: currentUser.user_type || 'standard',
+            active: true
+          });
+          console.log('[Admin] User activation webhook result:', webhookResult);
+        } catch (webhookError) {
+          console.error('[Admin] Webhook error on user activation:', webhookError);
+          webhookResult = { success: false, error: webhookError.message };
+        }
       } else {
         console.log('[Admin] Sending user.deactivated webhook');
-        webhookService.sendUserDeactivated({
-          userId: userId,
-          email: currentUser.email,
-          name: currentUser.full_name,
-          phone: currentUser.phone,
-          deactivatedAt: new Date().toISOString(),
-          deactivatedBy: req.user.email
-        }).catch(err => {
-          console.error('Webhook error on user deactivation:', err);
-        });
+        try {
+          webhookResult = await webhookService.sendUserDeactivated({
+            userId: userId,
+            email: currentUser.email,
+            name: currentUser.full_name,
+            phone: currentUser.phone,
+            dateOfBirth: currentUser.date_of_birth,
+            gender: currentUser.gender,
+            fitnessGoal: currentUser.fitness_goal,
+            experienceLevel: currentUser.experience_level,
+            height: currentUser.height_cm ? `${currentUser.height_cm} cm` : null,
+            weight: currentUser.weight_kg ? `${currentUser.weight_kg} kg` : null,
+            deactivatedAt: new Date().toISOString(),
+            userType: currentUser.user_type || 'standard',
+            active: false
+          });
+          console.log('[Admin] User deactivation webhook result:', webhookResult);
+        } catch (webhookError) {
+          console.error('[Admin] Webhook error on user deactivation:', webhookError);
+          webhookResult = { success: false, error: webhookError.message };
+        }
       }
     }
     
-    res.json({ message: 'User status updated successfully', user: updatedUser });
+    res.json({ message: 'User status updated successfully', user: updatedUser, webhook: webhookResult });
 
   } catch (error) {
     console.error('Update user error:', error);

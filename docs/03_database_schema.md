@@ -256,7 +256,7 @@ CREATE TRIGGER trg_sessioni_updated_at
 
 ### exercises (Esercizi)
 ```sql
-CREATE TABLE exercises (
+CREATE TABLE esercizi (  -- NOTA: Nome tabella in italiano nel sistema reale
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   
   -- Relazioni
@@ -268,12 +268,12 @@ CREATE TABLE exercises (
   ordine_nella_sessione integer DEFAULT 1, -- Ordine nella sessione
   
   -- Configurazione Esercizio
-  series integer NOT NULL DEFAULT 3,    -- Numero serie
+  serie integer NOT NULL DEFAULT 3,     -- Numero serie (CAMPO CORRETTO: 'serie' non 'series')
   ripetizioni text,                      -- Ripetizioni (es: "8-12", "15", "AMRAP")
   peso_kg real,                          -- Peso suggerito
-  recovery_seconds integer DEFAULT 90,   -- Recupero in secondi
+  pausa_sec integer DEFAULT 90,         -- Recupero in secondi (CAMPO CORRETTO: 'pausa_sec')
   
-  -- Nuovi Campi (Migrazione Gennaio 2025)
+  -- Nuovi Campi (Migrazione Settembre 2025)
   intensity integer DEFAULT 0 CHECK (intensity >= 0 AND intensity <= 10), -- Intensità 0-10
   external_url text,                     -- Link video/tutorial
   
@@ -501,6 +501,88 @@ CREATE POLICY "Admins can view all scheduled sessions" ON scheduled_sessions
 CREATE TRIGGER trg_scheduled_sessions_updated_at
   BEFORE UPDATE ON scheduled_sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+## Sistema Webhook e Integrazioni (2025)
+
+### Webhook Events
+Il sistema è integrato con N8N per automazioni e notifiche tramite webhook.
+
+#### Eventi Webhook Supportati
+```javascript
+// webhook events definiti in services/webhookService.js
+const WEBHOOK_EVENTS = {
+  USER_PREREGISTERED: 'user.preregistered',    // Nuovo utente, profilo incompleto
+  USER_REGISTERED: 'user.registered',          // Profilo utente completato
+  USER_ACTIVATED: 'user.activated',            // Utente attivato da trainer/admin
+  USER_DEACTIVATED: 'user.deactivated',        // Utente disattivato
+  NEW_SCHEDA: 'event.newscheda'                // Nuova scheda allenamento attivata
+};
+```
+
+#### Struttura Payload Webhook Standardizzata
+```json
+{
+  "event": "event_type",
+  "timestamp": "2025-09-11T00:00:00.000Z",
+  "data": {
+    "utente": {
+      "nome": "string|null",
+      "email": "string|null", 
+      "telefono": "string|null",
+      "altezza": "string|null",
+      "peso": "string|null",
+      "data_nascita": "string|null"
+    },
+    "profilo": {
+      "genere": "string|null",
+      "livello": "string|null",
+      "obiettivo": "string|null", 
+      "tipo_utente": "standard|admin|preregistered|registered",
+      "attivo": "boolean|null"
+    },
+    "scheda": {
+      "titolo": "string|null",
+      "descrizione": "string|null",
+      "creata_il": "date|null",
+      "durata_settimane": "integer|null",
+      "sessioni_per_settimana": "integer|null",
+      "sessioni": "array|null"
+    },
+    "metadata": {
+      "userId": "uuid",
+      "registrationDate": "timestamp|null",
+      "activatedAt": "timestamp|null", 
+      "deactivatedAt": "timestamp|null"
+    }
+  }
+}
+```
+
+#### Database Triggers per Webhook (Futuro)
+```sql
+-- Possibile implementazione futura: trigger automatici
+CREATE OR REPLACE FUNCTION notify_webhook_user_status_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Trigger webhook su cambio stato utente
+  IF OLD.utente_attivo != NEW.utente_attivo THEN
+    PERFORM pg_notify('webhook_user_status', 
+      json_build_object(
+        'user_id', NEW.id,
+        'old_status', OLD.utente_attivo,
+        'new_status', NEW.utente_attivo
+      )::text
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Applicazione trigger (non ancora implementato)
+-- CREATE TRIGGER trg_user_status_webhook
+--   AFTER UPDATE ON user_profiles
+--   FOR EACH ROW EXECUTE FUNCTION notify_webhook_user_status_change();
 ```
 
 ## Views e Query Utili

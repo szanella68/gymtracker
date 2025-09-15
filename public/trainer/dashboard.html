@@ -16,31 +16,6 @@
             <div class="trainer-actions"></div>
         </div>
 
-        <!-- Trainer Stats (ripristinati) -->
-        <div class="trainer-stats stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">👥</div>
-                <div class="stat-info">
-                    <h3 id="totalClients">--</h3>
-                    <p>Clienti attivi</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📋</div>
-                <div class="stat-info">
-                    <h3 id="activePrograms">--</h3>
-                    <p>Programmi attivi</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📈</div>
-                <div class="stat-info">
-                    <h3 id="avgAdherence">--</h3>
-                    <p>Aderenza media</p>
-                </div>
-            </div>
-        </div>
-
         <!-- Navigazione principale -->
         <div class="trainer-nav nav-menu">
             <a href="trainer/clienti.html" class="nav-card primary">
@@ -66,6 +41,50 @@
                 <h3>Report & Analytics</h3>
                 <p>Analisi performance e progressi</p>
             </a>
+        </div>
+
+        <!-- Trainer Stats Compatte -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📊 Statistiche Generali</h3>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <h3 id="totalClients">--</h3>
+                        <p>Clienti attivi</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-info">
+                        <h3 id="activePrograms">--</h3>
+                        <p>Programmi attivi</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-info">
+                        <h3 id="avgAdherence">--</h3>
+                        <p>Aderenza media</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-info">
+                        <h3 id="todaySessions">--</h3>
+                        <p>Sessioni oggi</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-info">
+                        <h3 id="weekStreak">--</h3>
+                        <p>Serie settimanale</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Attività recenti (ripristinato contenitore) -->
@@ -131,35 +150,6 @@
             </div>
         </div>
         
-        <!-- Quick Stats Overview -->
-        <div class="card">
-            <div class="card-header">
-                <h3>📊 Panoramica Rapida</h3>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-card" style="background: #fff; border: 2px solid #e9ecef;">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-info">
-                        <h3 id="todaySessions" style="color: #333;">--</h3>
-                        <p>Sessioni oggi</p>
-                    </div>
-                </div>
-                <div class="stat-card" style="background: #fff; border: 2px solid #e9ecef;">
-                    <div class="stat-icon">🔥</div>
-                    <div class="stat-info">
-                        <h3 id="weekStreak" style="color: #333;">--</h3>
-                        <p>Serie settimanale</p>
-                    </div>
-                </div>
-                <div class="stat-card" style="background: #fff; border: 2px solid #e9ecef;">
-                    <div class="stat-icon">🎯</div>
-                    <div class="stat-info">
-                        <h3 id="monthlyGoals" style="color: #333;">--</h3>
-                        <p>Obiettivi raggiunti</p>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
     <!-- New Client Modal -->
@@ -185,15 +175,15 @@
                     <textarea id="clientGoal" name="fitness_goal" rows="3" placeholder="Descrivere l'obiettivo del cliente..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="experienceLevel">Livello esperienza</label>
-                    <select id="experienceLevel" name="experience_level">
+                    <label for="experienceLevel" class="modern-label"><span class="label-text">Livello esperienza</span></label>
+                    <select id="experienceLevel" name="experience_level" class="modern-select">
                         <option value="">Seleziona</option>
                         <option value="beginner">Principiante</option>
                         <option value="intermediate">Intermedio</option>
                         <option value="advanced">Avanzato</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-primary w-full">Crea Cliente</button>
+                <button type="submit" class="btn btn-add btn-with-icon w-full">➕ Crea Cliente</button>
                 <div id="newClientError" class="error-message" style="display: none;"></div>
             </form>
         </div>
@@ -418,19 +408,22 @@
                 // Mock quick stats - replace with real API
                 const quickStats = {
                     todaySessions: 8,
-                    weekStreak: 5,
-                    monthlyGoals: 12
+                    weekStreak: 5
                 };
                 
-                document.getElementById('todaySessions').textContent = quickStats.todaySessions;
-                document.getElementById('weekStreak').textContent = quickStats.weekStreak;
-                document.getElementById('monthlyGoals').textContent = quickStats.monthlyGoals;
+                const todayEl = document.getElementById('todaySessions');
+                const streakEl = document.getElementById('weekStreak');
+                
+                if (todayEl) todayEl.textContent = quickStats.todaySessions;
+                if (streakEl) streakEl.textContent = quickStats.weekStreak;
                 
             } catch (error) {
                 console.error('Error loading quick stats:', error);
-                document.getElementById('todaySessions').textContent = '0';
-                document.getElementById('weekStreak').textContent = '0';
-                document.getElementById('monthlyGoals').textContent = '0';
+                const todayEl = document.getElementById('todaySessions');
+                const streakEl = document.getElementById('weekStreak');
+                
+                if (todayEl) todayEl.textContent = '0';
+                if (streakEl) streakEl.textContent = '0';
             }
         }
         

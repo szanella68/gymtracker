@@ -8,42 +8,35 @@
   <link rel="stylesheet" href="shared/css/shared.css">
   <link rel="stylesheet" href="trainer/css/trainer.css">
   <style>
-    /* Layout originale mantenuto */
-    .layout { 
-      display: grid; 
-      grid-template-columns: 350px 1fr; 
-      gap: 24px; 
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+    /* Layout moved to shared (.trainer-dashboard + .page-grid) */
 
-    /* SIDEBAR MODERNA */
+    /* Sidebar con design unificato */
     .sidebar { 
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
       border: 1px solid #e2e8f0;
-      border-radius: 20px; 
+      border-radius: 16px; 
       padding: 0;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
-      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      overflow: visible; /* evita clipping menu a tendina/tooltip */
       height: fit-content;
+      position: relative;
+      z-index: 10;
     }
 
     .sidebar-header {
-      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-      color: white;
-      padding: 24px;
-      position: relative;
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: #374151;
+      padding: 20px;
+      border-bottom: 3px solid #10b981;
     }
 
-    .sidebar-header::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #10b981, #34d399, #10b981);
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .sidebar-content {
@@ -51,50 +44,51 @@
     }
 
     .client-item { 
-      padding: 16px;
-      border-radius: 12px; 
+      padding: 12px 16px;
+      border-radius: 10px; 
       display: flex; 
       justify-content: space-between; 
       align-items: center; 
       cursor: pointer;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       transition: all 0.3s ease;
-      border: 2px solid transparent;
+      border: 1px solid transparent;
+      background: white;
     }
 
     .client-item:hover { 
-      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-      transform: translateX(4px);
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      transform: translateY(-1px);
+      border-color: #cbd5e1;
     }
 
     .client-item.active { 
       background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
       border-color: #10b981;
-      transform: translateX(8px);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
     }
 
     .badge { 
-      font-size: 11px; 
-      padding: 4px 12px; 
-      border-radius: 20px;
+      font-size: 10px; 
+      padding: 3px 8px; 
+      border-radius: 12px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
 
     .badge.active { 
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
-      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
     }
 
     .badge.inactive { 
-      background: #f1f5f9; 
+      background: #e2e8f0; 
       color: #64748b; 
     }
 
-    /* SEZIONE SCHEDE MODERNA */
+    /* Area principale schede */
     .plans { 
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
       border: 1px solid #e2e8f0;
@@ -147,90 +141,7 @@
       box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
     }
 
-    /* BOTTONI MODERNI */
-    .modern-btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .modern-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: left 0.5s;
-    }
-
-    .modern-btn:hover::before {
-      left: 100%;
-    }
-
-    .btn-primary-modern {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-    }
-
-    .btn-primary-modern:hover {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
-    }
-
-    .btn-secondary-modern {
-      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4);
-    }
-
-    .btn-secondary-modern:hover {
-      background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(107, 114, 128, 0.5);
-    }
-
-    .btn-danger-modern {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
-    }
-
-    .btn-danger-modern:hover {
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.5);
-    }
-
-    .btn-success-modern {
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
-    }
-
-    .btn-success-modern:hover {
-      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.5);
-    }
-
-    .btn-small {
-      padding: 8px 16px;
-      font-size: 12px;
-    }
+    /* Bottoni: usa shared.css alias semantici (.btn, .btn-add, .btn-save, .btn-cancel, .btn-delete, .btn-sm, .btn-lg, .btn-with-icon) */
 
     /* INTESTAZIONE SCHEDA CON CAMPI AFFIANCATI */
     .plan-header-section {
@@ -594,7 +505,13 @@
 <body>
   <div data-include="shared/partials/header.html"></div>
   
-  <main class="layout">
+  <main class="trainer-dashboard">
+    <div class="dashboard-header">
+      <h1>📋 Gestione Schede Allenamento</h1>
+      <div class="trainer-actions"></div>
+    </div>
+
+    <div class="page-grid">
     <!-- SIDEBAR CLIENTI -->
     <div class="sidebar">
       <div class="sidebar-header">
@@ -614,15 +531,14 @@
     <!-- AREA PRINCIPALE SCHEDE -->
     <div class="plans">
       <div class="plans-header">
-        <h1 style="margin: 0; font-size: 1.4rem; color: #374151;">
-          📋 Gestione Schede Allenamento
-        </h1>
+        <h2 style="margin: 0; font-size: 1.2rem; color: #374151;">Elenco e Dettaglio Schede</h2>
       </div>
       
       <div class="plans-content">
         <div id="plansList" style="margin-bottom: 20px;"></div>
         <div id="planDetail"></div>
       </div>
+    </div>
     </div>
   </main>
 
@@ -665,8 +581,8 @@
         </form>
       </div>
       <div class="popup-footer">
-        <button class="modern-btn btn-secondary-modern" onclick="closePopup('sessionPopup')">Annulla</button>
-        <button class="modern-btn btn-success-modern" onclick="saveSessionFromPopup()">💾 Salva Sessione</button>
+        <button class="btn btn-cancel" onclick="closePopup('sessionPopup')">Annulla</button>
+        <button class="btn btn-save" onclick="saveSessionFromPopup()">💾 Salva Sessione</button>
       </div>
     </div>
   </div>
@@ -725,8 +641,8 @@
         </form>
       </div>
       <div class="popup-footer">
-        <button class="modern-btn btn-secondary-modern" onclick="closePopup('exercisePopup')">Annulla</button>
-        <button class="modern-btn btn-success-modern" onclick="saveExerciseFromPopup()">💾 Salva Esercizio</button>
+        <button class="btn btn-cancel" onclick="closePopup('exercisePopup')">Annulla</button>
+        <button class="btn btn-save" onclick="saveExerciseFromPopup()">💾 Salva Esercizio</button>
       </div>
     </div>
   </div>
@@ -735,6 +651,7 @@
   <script src="shared/js/core/api.js"></script>
   <script src="shared/js/include.js"></script>
   <script src="shared/js/core/utils.js"></script>
+  <script src="shared/js/webhooks.js"></script>
   <script>
     // Auth check
     if (!GymAPI.isAuthenticated()) {
@@ -827,9 +744,9 @@
           box.innerHTML = `
             <div style="text-align: center; padding: 40px; color: #64748b;">
               <p>Nessuna scheda trovata per <strong>${currentClient.name}</strong></p>
-              <button class="modern-btn btn-primary-modern" onclick="createPlan()">
-                ➕ Crea Prima Scheda
-              </button>
+          <button class="btn btn-add btn-with-icon" onclick="createPlan()">
+            ➕ Crea Prima Scheda
+          </button>
             </div>`;
           document.getElementById('planDetail').innerHTML = '';
           return;
@@ -838,7 +755,7 @@
         box.innerHTML = `
           <div class="flex-between" style="margin-bottom: 16px;">
             <h3 style="margin: 0; color: #374151;">Schede di <strong>${currentClient.name}</strong></h3>
-            <button class="modern-btn btn-primary-modern" onclick="createPlan()">
+            <button class="btn btn-add btn-with-icon" onclick="createPlan()">
               ➕ Nuova Scheda
             </button>
           </div>`;
@@ -894,10 +811,10 @@
       
       let html = `
         <div style="margin-bottom: 20px;">
-          <button class="modern-btn btn-secondary-modern" onclick="loadPlans()">
+          <button class="btn btn-cancel" onclick="loadPlans()">
             ← Torna alle schede
           </button>
-          <button class="modern-btn btn-danger-modern" onclick="deletePlan()" style="float: right;">
+          <button class="btn btn-delete btn-with-icon" onclick="deletePlan()" style="float: right;">
             🗑 Elimina scheda
           </button>
         </div>`;
@@ -935,7 +852,7 @@
           </div>
           
           <div style="margin-top: 20px;">
-            <button class="modern-btn btn-success-modern" onclick="savePlan('${plan.id}')">
+            <button class="btn btn-save btn-lg btn-with-icon" onclick="savePlan('${plan.id}')">
               💾 Salva Configurazione
             </button>
           </div>
@@ -945,7 +862,7 @@
       html += `
         <div class="flex-between" style="margin-bottom: 20px;">
           <h3 style="margin: 0; color: #374151;">🏋️ Sessioni Allenamento</h3>
-          <button class="modern-btn btn-primary-modern" onclick="openNewSessionPopup()">
+          <button class="btn btn-add btn-lg btn-with-icon" onclick="openNewSessionPopup()">
             ➕ Nuova Sessione
           </button>
         </div>`;
@@ -970,13 +887,13 @@
                     ${s.descrizione ? `<p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">${s.descrizione}</p>` : ''}
                   </div>
                   <div class="session-actions">
-                    <button class="modern-btn btn-secondary-modern btn-small" onclick="openEditSessionPopup('${s.id}', '${(s.nome || '').replace(/'/g, '\\\'')}'${s.descrizione ? `, '${s.descrizione.replace(/'/g, '\\\'')}''` : ', null'}${s.giorno_settimana ? `, ${s.giorno_settimana}` : ', null'}${s.durata_stimata_minuti ? `, ${s.durata_stimata_minuti}` : ', null'})">
+                    <button class="btn btn-secondary btn-sm" onclick="openEditSessionPopup('${s.id}', '${(s.nome || '').replace(/'/g, '\\\'')}'${s.descrizione ? `, '${s.descrizione.replace(/'/g, '\\\'')}''` : ', null'}${s.giorno_settimana ? `, ${s.giorno_settimana}` : ', null'}${s.durata_stimata_minuti ? `, ${s.durata_stimata_minuti}` : ', null'})">
                       ✏️ Modifica
                     </button>
-                    <button class="modern-btn btn-primary-modern btn-small" onclick="openNewExercisePopup('${s.id}')">
+                    <button class="btn btn-add btn-sm btn-with-icon" onclick="openNewExercisePopup('${s.id}')">
                       ➕ Esercizio
                     </button>
-                    <button class="modern-btn btn-danger-modern btn-small" onclick="deleteSession('${s.id}')">
+                    <button class="btn btn-delete btn-sm btn-with-icon" onclick="deleteSession('${s.id}')">
                       🗑 Elimina
                     </button>
                   </div>
@@ -1008,10 +925,10 @@
                     </div>
                   </div>
                   <div class="exercise-actions">
-                    <button class="modern-btn btn-secondary-modern btn-small" onclick="openEditExercisePopup('${ex.id}')">
+                    <button class="btn btn-secondary btn-sm" onclick="openEditExercisePopup('${ex.id}')">
                       ✏️ Modifica
                     </button>
-                    <button class="modern-btn btn-danger-modern btn-small" onclick="deleteExercise('${ex.id}')">
+                    <button class="btn btn-delete btn-sm btn-with-icon" onclick="deleteExercise('${ex.id}')">
                       🗑
                     </button>
                   </div>
@@ -1234,6 +1151,17 @@
             body: JSON.stringify({ attiva: true })
           });
           if (!r.ok) throw new Error('Activate failed');
+          
+          // Check webhook result and show notification
+          const result = await r.json().catch(() => ({}));
+          if (result.webhook) {
+            if (result.webhook.success) {
+              showWebhookNotification('✅ Webhook inviato per evento: event.newscheda', 'success');
+            } else {
+              showWebhookNotification('❌ Webhook fallito per evento: event.newscheda', 'error');
+            }
+          }
+          
           await loadPlans();
         } else {
           const r = await fetch(`${GymAPI.baseURL}/trainer/plans/${encodeURIComponent(id)}`, {
@@ -1285,6 +1213,8 @@
       if (!r.ok) return alert('Eliminazione esercizio fallita');
       openPlan(currentPlan);
     }
+
+    // Webhook notification function is now loaded from shared/js/webhooks.js
 
     // Chiudi popup con ESC
     document.addEventListener('keydown', function(e) {
