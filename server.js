@@ -38,7 +38,6 @@ app.use('/api/', limiter);
 app.use(cors({
   origin: [
     'http://localhost:3010',
-    'http://localhost:3007',
     'https://zanserver.sytes.net',
     process.env.FRONTEND_URL || 'https://zanserver.sytes.net'
   ],

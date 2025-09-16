@@ -65,7 +65,7 @@
     "nodemon": "^3.0.2"
   },
   "config": {
-    "port": 3007
+    "port": 3010
   },
   "funding": {
     "type": "github",

@@ -97,7 +97,7 @@ gymtracker/
 ### Configurazione Ambiente (Supabase)
 Modifica il file `.env` secondo le tue necessità:
 ```env
-PORT=3007
+PORT=3010
 NODE_ENV=production
 AUTH_PROVIDER=supabase
 DB_PROVIDER=supabase
@@ -210,7 +210,7 @@ Imposta nei metadata dell'utente in Supabase Auth il campo `user_type=admin`. In
 npm run dev
 
 # Verificare API health
-curl http://localhost:3007/api/health
+curl http://localhost:3010/api/health
 
 # Test connessione database
 node -e "require('./config/database').initDatabase()"

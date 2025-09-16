@@ -328,7 +328,7 @@ C:/filepubblici/gymtracker/
 
 ### Porte e Indirizzi
 ```javascript
-const PORT = process.env.PORT || 3007;  // Porta Node.js
+const PORT = process.env.PORT || 3010;  // Porta Node.js
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://zanserver.sytes.net';
 ```
 
@@ -412,13 +412,13 @@ ProxyRequests Off
     Require all granted
 </Proxy>
 
-# API GymTracker → Node.js porta 3007
-ProxyPass /gymtracker/api/ http://localhost:3007/api/
-ProxyPassReverse /gymtracker/api/ http://localhost:3007/api/
+# API GymTracker → Node.js porta 3010
+ProxyPass /gymtracker/api/ http://localhost:3010/api/
+ProxyPassReverse /gymtracker/api/ http://localhost:3010/api/
 
 # Headers per proxy (opzionale ma raccomandato)
-ProxyPassMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
-ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
+ProxyPassMatch ^/gymtracker/api/(.*)$ http://localhost:3010/api/$1
+ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3010/api/$1
 ```
 
 ### httpd-ssl.conf - Configurazione HTTPS
@@ -477,10 +477,10 @@ ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
         RewriteRule ^(.*)$ index.html [L]
     </Directory>
 
-    # Proxy API GymTracker → Node.js porta 3007
+    # Proxy API GymTracker → Node.js porta 3010
     # IMPORTANTE: API specifiche PRIMA delle generiche!
-    ProxyPass        /gymtracker/api/     http://localhost:3007/api/
-    ProxyPassReverse /gymtracker/api/     http://localhost:3007/api/
+    ProxyPass        /gymtracker/api/     http://localhost:3010/api/
+    ProxyPassReverse /gymtracker/api/     http://localhost:3010/api/
     
     # Timeout configurazione per upload grandi
     ProxyTimeout 300
@@ -491,11 +491,11 @@ ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
     ProxyPass        /api/zanflow/       http://localhost:3002/api/zanflow/
     ProxyPassReverse /api/zanflow/       http://localhost:3002/api/zanflow/
 
-    # App Nicola (porta 3007) - STESSO PORT di GymTracker!
-    ProxyPass        /api/nicola/        http://localhost:3007/api/
-    ProxyPassReverse /api/nicola/        http://localhost:3007/api/
-    ProxyPass        /nicola/api/        http://localhost:3007/api/
-    ProxyPassReverse /nicola/api/        http://localhost:3007/api/
+    # App Nicola (porta 3010) - STESSO PORT di GymTracker!
+    ProxyPass        /api/nicola/        http://localhost:3010/api/
+    ProxyPassReverse /api/nicola/        http://localhost:3010/api/
+    ProxyPass        /nicola/api/        http://localhost:3010/api/
+    ProxyPassReverse /nicola/api/        http://localhost:3010/api/
     
     # Backend principale ZanMan (porta 3000)
     ProxyPass        /api/               http://localhost:3000/api/
@@ -506,8 +506,8 @@ ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
     ProxyPassReverse /app1/              http://localhost:3000/
 
     # UI Nicola
-    ProxyPass        /nicola/            http://localhost:3007/
-    ProxyPassReverse /nicola/            http://localhost:3007/
+    ProxyPass        /nicola/            http://localhost:3010/
+    ProxyPassReverse /nicola/            http://localhost:3010/
 
     # ===== LOGS =====
     ErrorLog "C:/xampp/apache/logs/ssl_error.log"
@@ -524,7 +524,7 @@ ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
 
 # Configurazione Server
 NODE_ENV=production
-PORT=3007
+PORT=3010
 CORS_ORIGIN=https://zanserver.sytes.net
 
 # Supabase Configuration
@@ -573,7 +573,7 @@ LOG_LEVEL=info
 
 1. User compila Login Form
 2. Frontend invia POST /gymtracker/api/auth/login
-3. Apache proxy a :3007/api/auth/login
+3. Apache proxy a :3010/api/auth/login
 4. Node.js autentica con Supabase
 5. Supabase ritorna JWT + User Data
 6. Node.js risponde con JSON
@@ -703,9 +703,9 @@ if not exist ".env" (
     exit /b 1
 )
 
-echo Avvio server GymTracker sulla porta 3007...
+echo Avvio server GymTracker sulla porta 3010...
 echo.
-echo URL Locale: http://localhost:3007
+echo URL Locale: http://localhost:3010
 echo URL Pubblico: https://zanserver.sytes.net/gymtracker/
 echo.
 echo Premi Ctrl+C per arrestare il server
@@ -797,7 +797,7 @@ curl -X POST https://zanserver.sytes.net/gymtracker/api/auth/login \
 #### Server Non Raggiungibile
 - Verifica Apache sia avviato: `net start apache2.4`
 - Verifica Node.js sia avviato: `tasklist | findstr node`
-- Controlla porte libere: `netstat -an | findstr 3007`
+- Controlla porte libere: `netstat -an | findstr 3010`
 - Verifica DNS No-IP sia aggiornato
 - Controlla firewall Windows
 
@@ -1586,7 +1586,7 @@ Crea il file `docs/CHANGELOG.md` con il seguente contenuto:
 - CHANGELOG.md - Tracking modifiche documentazione
 
 ### Technical Details
-- Configurazione Apache reverse proxy per porta 3007
+- Configurazione Apache reverse proxy per porta 3010
 - Integrazione Supabase con autenticazione JWT
 - Struttura cartelle organizzata per scalabilità
 - Script deployment automatizzati per Windows

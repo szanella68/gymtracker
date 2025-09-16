@@ -43,7 +43,7 @@ cp .env.example .env
 Edit `.env` with your settings (Supabase mode):
 ```env
 # Server
-PORT=3007
+PORT=3010
 NODE_ENV=production
 AUTH_PROVIDER=supabase
 DB_PROVIDER=supabase
@@ -88,8 +88,8 @@ Alias /gymtracker "C:/path/to/gymtracker/public"
 
 # API Reverse Proxy
 ProxyPreserveHost On
-ProxyPass /gymtracker/api/ http://localhost:3007/api/
-ProxyPassReverse /gymtracker/api/ http://localhost:3007/api/
+ProxyPass /gymtracker/api/ http://localhost:3010/api/
+ProxyPassReverse /gymtracker/api/ http://localhost:3010/api/
 ```
 
 ### 5. Database Setup (Supabase)
@@ -135,7 +135,7 @@ After successful installation:
 | **Main Login** | `https://your-domain.com/gymtracker/` | Unified login page |
 | **Client Dashboard** | `https://your-domain.com/gymtracker/utente/dashboard.html` | Client interface |
 | **Trainer Dashboard** | `https://your-domain.com/gymtracker/trainer/dashboard.html` | Admin interface |
-| **API Health** | `http://localhost:3007/api/health` | Backend status |
+| **API Health** | `http://localhost:3010/api/health` | Backend status |
 
 ## 🔧 Configuration Options
 
@@ -203,7 +203,7 @@ npm start
 **API 404 errors**
 - Verify Apache proxy configuration
 - Check Node.js is running on correct port
-- Test API directly: `curl http://localhost:3007/api/health`
+- Test API directly: `curl http://localhost:3010/api/health`
 
 ### Debug Mode
 Run with debug logging:

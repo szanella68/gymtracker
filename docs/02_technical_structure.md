@@ -152,7 +152,7 @@ C:/filepubblici/gymtracker/
 
 ### Porte e Indirizzi
 ```javascript
-const PORT = process.env.PORT || 3010;  // Porta Node.js (AGGIORNATA da 3007)
+const PORT = process.env.PORT || 3010;  // Porta Node.js (AGGIORNATA da 3010)
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://zanserver.sytes.net';
 ```
 
@@ -237,13 +237,13 @@ ProxyRequests Off
     Require all granted
 </Proxy>
 
-# API GymTracker → Node.js porta 3007
-ProxyPass /gymtracker/api/ http://localhost:3007/api/
-ProxyPassReverse /gymtracker/api/ http://localhost:3007/api/
+# API GymTracker → Node.js porta 3010
+ProxyPass /gymtracker/api/ http://localhost:3010/api/
+ProxyPassReverse /gymtracker/api/ http://localhost:3010/api/
 
 # Headers per proxy (opzionale ma raccomandato)
-ProxyPassMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
-ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
+ProxyPassMatch ^/gymtracker/api/(.*)$ http://localhost:3010/api/$1
+ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3010/api/$1
 ```
 
 ### httpd-ssl.conf - Configurazione HTTPS
@@ -302,10 +302,10 @@ ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
         RewriteRule ^(.*)$ index.html [L]
     </Directory>
 
-    # Proxy API GymTracker → Node.js porta 3007
+    # Proxy API GymTracker → Node.js porta 3010
     # IMPORTANTE: API specifiche PRIMA delle generiche!
-    ProxyPass        /gymtracker/api/     http://localhost:3007/api/
-    ProxyPassReverse /gymtracker/api/     http://localhost:3007/api/
+    ProxyPass        /gymtracker/api/     http://localhost:3010/api/
+    ProxyPassReverse /gymtracker/api/     http://localhost:3010/api/
     
     # Timeout configurazione per upload grandi
     ProxyTimeout 300
@@ -316,7 +316,7 @@ ProxyPassReverseMatch ^/gymtracker/api/(.*)$ http://localhost:3007/api/$1
     ProxyPass        /api/zanflow/       http://localhost:3002/api/zanflow/
     ProxyPassReverse /api/zanflow/       http://localhost:3002/api/zanflow/
 
-    # App Nicola (porta 3007) - STESSO PORT di GymTracker!
+    # App Nicola (porta 3070) -
     ProxyPass        /api/nicola/        http://localhost:3007/api/
     ProxyPassReverse /api/nicola/        http://localhost:3007/api/
     ProxyPass        /nicola/api/        http://localhost:3007/api/
