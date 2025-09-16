@@ -9,6 +9,41 @@
     <link rel="stylesheet" href="trainer/css/trainer.css">
     <link rel="stylesheet" href="utente/css/utente.css">
 </head>
+<script>
+// Funzione per abilitare menu admin se necessario
+async function enableAdminMenuIfNeeded() {
+  try {
+    console.log('[Dashboard] Checking admin status...');
+    
+    if (!window.GymAPI || !GymAPI.isAuthenticated()) {
+      console.log('[Dashboard] Not authenticated');
+      return;
+    }
+
+    const userProfile = await GymAPI.getCurrentUser();
+    const userType = userProfile.profile?.user_type || userProfile.user_type || 'standard';
+    const isAdmin = userType.toString().toLowerCase() === 'admin';
+    
+    console.log('[Dashboard] User type:', userType, 'isAdmin:', isAdmin);
+
+    if (isAdmin) {
+      const adminSection = document.getElementById('adminMenuSection');
+      if (adminSection) {
+        adminSection.style.display = 'block';
+        console.log('[Dashboard] ✅ Menu admin abilitato!');
+      }
+    }
+
+  } catch (error) {
+    console.error('[Dashboard] Errore controllo admin:', error);
+  }
+}
+
+// Esegui dopo che tutto è caricato
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(enableAdminMenuIfNeeded, 1000);
+});
+</script>
 <body>
     <div data-include="shared/partials/header_user.html"></div>
     <main class="trainer-dashboard layout-fluid">

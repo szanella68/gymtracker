@@ -10,12 +10,22 @@
         <button class="menu-toggle" data-dropdown-toggle>
           ☰ Menu
         </button>
-        <div class="dropdown-menu">
-          <a href="utente/calendario.html" class="dropdown-item">📅 Il Mio Calendario</a>
-          <a href="utente/schede.html" class="dropdown-item">📋 Le Mie Schede</a>
-          <a href="utente/goals.html" class="dropdown-item">🎯 I Miei Obiettivi</a>
-          <a href="utente/profilo.html" class="dropdown-item">👤 Il Mio Profilo</a>
-          <a href="utente/report.html" class="dropdown-item">📊 I Miei Progressi</a>
+        <div class="dropdown-menu" id="userMenuDropdown">
+          <!-- Menu base utente -->
+          <a href="/gymtracker/utente/dashboard.html" class="dropdown-item">📱 La Mia Dashboard</a>
+          <a href="/gymtracker/utente/schede.html" class="dropdown-item">📋 Le Mie Schede</a>
+          <a href="/gymtracker/utente/goals.html" class="dropdown-item">🎯 I Miei Obiettivi</a>
+          <a href="/gymtracker/utente/profilo.html" class="dropdown-item">👤 Il Mio Profilo</a>
+          
+          <!-- Menu admin (verrà mostrato solo se admin) -->
+          <div id="adminMenuSection" style="display: none;">
+            <div class="menu-divider"></div>
+            <div class="menu-section-title">🧑‍🏫 Area Trainer</div>
+            <a href="/gymtracker/trainer/dashboard.html" class="dropdown-item">📊 Dashboard Trainer</a>
+            <a href="/gymtracker/trainer/clienti.html" class="dropdown-item">👥 Gestione Clienti</a>
+            <a href="/gymtracker/trainer/schede.html" class="dropdown-item">📋 Creazione Schede</a>
+            <a href="/gymtracker/trainer/profilo.html" class="dropdown-item">👤 Profili Clienti</a>
+          </div>
         </div>
       </div>
       <button class="btn-logout btn btn-sm" onclick="window.GymAPI ? GymAPI.logout() : (window.location.href='/gymtracker/utente/')">Logout</button>
@@ -23,4 +33,33 @@
   </div>
 </header>
 
+<style>
+.menu-section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 4px 16px;
+  margin: 8px 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 
+.menu-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 8px 12px;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 8px 16px;
+  color: #374151;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+</style>
